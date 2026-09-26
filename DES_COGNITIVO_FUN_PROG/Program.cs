@@ -1,3 +1,9 @@
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Win32;
+using System.Diagnostics;
+using System.Drawing;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -27,3 +33,4 @@ app.MapControllerRoute(
 
 
 app.Run();
+
