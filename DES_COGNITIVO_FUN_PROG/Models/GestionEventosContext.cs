@@ -15,7 +15,7 @@ public partial class GestionEventosContext : DbContext
     {
     }
 
-    public virtual DbSet<Administrador> Administradors { get; set; }
+    public virtual DbSet<Administrador> Administradors { get; set; } //estos son los controladores espejo de las tablas de la base de datos
 
     public virtual DbSet<Cliente> Clientes { get; set; }
 

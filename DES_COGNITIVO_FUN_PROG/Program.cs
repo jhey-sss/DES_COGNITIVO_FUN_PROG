@@ -1,5 +1,7 @@
+using DES_COGNITIVO_FUN_PROG.Models;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
 using System.Diagnostics;
 using System.Drawing;
@@ -8,6 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddDbContext<GestionEventosContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("EventosContext"));
+});
 
 var app = builder.Build();
 

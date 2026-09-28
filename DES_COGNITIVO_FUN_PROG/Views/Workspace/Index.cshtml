@@ -1,0 +1,27 @@
+﻿@model List<DES_COGNITIVO_FUN_PROG.Models.Cliente> // aqui confirmamos la clase Cliente mandada por el controlador
+
+<h1>Clientes<h1/>
+
+<Table class="table">
+
+        <thead>
+
+        <tr>
+            <th>Nombre</th>
+        </tr>
+
+        </thead>
+            <tbody> 
+                @foreach (var cliente_simple in Model) //aqui se conecta con las tablas de la base de datos y extrae la información a traves de un bucle
+                    {
+                        <tr>
+                            <td>@Html.DisplayFor(m=>cliente_simple.IdCliente)</td> 
+                            <td>@Html.DisplayFor(m=>cliente_simple.NumeroIdentidad)</td>
+                            <td>@Html.DisplayFor(m=>cliente_simple.Nombre)</td>
+                            <td>@Html.DisplayFor(m=>cliente_simple.Correo)</td>
+                            <td>@Html.DisplayFor(m=>cliente_simple.Telefono)</td>
+                        </tr>
+                    }
+                </tbody>
+
+</Table>
