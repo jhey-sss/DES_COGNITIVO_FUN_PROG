@@ -1,0 +1,71 @@
+﻿@model List<Evento>;
+
+<h1>Eventos</h1>
+<table class="table"> <!-- Se crea la tabla completa -->
+    <thead>
+        <!-- este es el encabezado de la tabla -->
+        <tr> <!-- crea una fila dentro de una tabla -->
+            
+            <th> <!-- cada uno es un encabezado de una columna -->
+                IdEvento <!-- este es el encabezado -->
+            </th>
+            <th>
+                CodigoEvento
+            </th>
+            <th>
+                <!-- cada uno es un encabezado de una columna -->
+                Lugar <!-- este es el encabezado -->
+            </th>
+            <th>
+                Nombre
+            </th>
+            <th>
+                <!-- cada uno es un encabezado de una columna -->
+                Presupuesto <!-- este es el encabezado -->
+            </th>
+            <th>
+                IdCliente
+            </th>
+            <th>
+                <!-- cada uno es un encabezado de una columna -->
+                NumeroIdentidad <!-- este es el encabezado -->
+            </th>
+            <th>
+                Nombre
+            </th>
+            <th>
+                <!-- cada uno es un encabezado de una columna -->
+                Correo <!-- este es el encabezado -->
+            </th>
+            <th>
+                Telefono
+            </th>
+        </tr>
+
+    
+    </thead>    <!-- cierre de la cabecera de la tabla -->
+
+    <tbody>
+        <!-- se crea el cuerpo de la tabla donde se vera reflejada la información -->
+        @foreach (var evento in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(e=>evento.IdEvento)</td>
+                <td>@Html.DisplayFor(e => evento.CodigoEvento)</td>
+                <td>@Html.DisplayFor(e => evento.Lugar)</td>
+                <td>@Html.DisplayFor(e => evento.Nombre)</td>
+                <td>@Html.DisplayFor(e => evento.Presupuesto)</td>
+                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.IdCliente)</td>
+                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.NumeroIdentidad)</td>
+                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.Nombre)</td>
+                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.Correo)</td>
+                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.Telefono)</td>
+
+            </tr>
+        }
+
+    </tbody>
+
+
+    
+</table>
