@@ -78,3 +78,9 @@
 #- CLAUD -> consulta de uso y reporte de codigo y logica y para realizar todo el informe
 #- GEMINI -> errores de codigo y logica de negocio
 #- CHAT GPT -> consulta de dudas rapidas y requerimentos de sistema 
+
+
+
+
+Funcionalidad Agregar Usuarios
+https://youtu.be/RjLKh8OY6zA
