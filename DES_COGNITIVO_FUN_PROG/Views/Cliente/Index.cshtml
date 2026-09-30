@@ -1,0 +1,46 @@
+﻿@model List<DES_COGNITIVO_FUN_PROG.Models.Cliente>
+
+<h1>Clientes</h1>
+
+<p>
+    <a asp-action="Create">Crear</a>
+</p>
+
+<table class="table">
+    <thead> <!-- Abre la cabesera de la tabla -->
+
+        <tr>
+            <th>
+                IdCliente
+            </th>
+            <th>
+                NumeroIdentidad
+            </th>
+            <th>
+                Nombre
+            </th>
+             <th>
+                Correo
+            </th>
+            <th>
+                Telefono
+            </th>
+
+        </tr>
+
+    </thead>
+    <tbody>
+        @foreach (var cliente in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(e => cliente.IdCliente)</td>
+                <td>@Html.DisplayFor(e => cliente.NumeroIdentidad)</td>
+                <td>@Html.DisplayFor(e => cliente.Nombre)</td>
+                <td>@Html.DisplayFor(e => cliente.Correo)</td>
+                <td>@Html.DisplayFor(e => cliente.Telefono)</td>
+            </tr>
+        }
+
+    </tbody>
+
+</table>
