@@ -1,0 +1,37 @@
+﻿@using DES_COGNITIVO_FUN_PROG.Models.ViewModels;
+@model ClienteViewModel
+
+<h1>Eliminar Cliente</h1>
+
+<h3 class="text-danger" > Estas seguro de que deceas eliminar el cliente </h3>
+<hr />
+<div>
+    <d1 class ="row">
+
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.NumeroIdentidad)</dt> <!-- Titulo de la columna -->
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.NumeroIdentidad)</dd> <!-- detale del titulo definido -->
+
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Nombre)</dt> <!-- Titulo de la columna -->
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Nombre)</dd> <!-- detale del titulo definido -->
+     
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Correo)</dt> <!-- Titulo de la columna -->
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Correo)</dd> <!-- detale del titulo definido -->
+
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Telefono)</dt> <!-- Titulo de la columna -->
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Telefono)</dd> <!-- detale del titulo definido -->
+
+    </d1>
+
+    <!-- se envia mediante post -->
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="IdCliente"/>
+        
+        <input type="submit" value="Desactivar usuario" class="btn btn-danger" />
+
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+
+    </form>
+
+
+
+</div>

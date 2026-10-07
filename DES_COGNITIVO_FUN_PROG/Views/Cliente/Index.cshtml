@@ -6,26 +6,18 @@
     <a asp-action="Create">Crear</a>
 </p>
 
+
+
+
 <table class="table">
     <thead> <!-- Abre la cabesera de la tabla -->
 
         <tr>
-            <th>
-                IdCliente
-            </th>
-            <th>
-                NumeroIdentidad
-            </th>
-            <th>
-                Nombre
-            </th>
-             <th>
-                Correo
-            </th>
-            <th>
-                Telefono
-            </th>
-
+            <th>IdCliente</th>
+            <th>NumeroIdentidad</th>
+            <th>Nombre</th>
+             <th>Correo</th>
+            <th>Telefono</th>
         </tr>
 
     </thead>
@@ -38,6 +30,12 @@
                 <td>@Html.DisplayFor(e => cliente.Nombre)</td>
                 <td>@Html.DisplayFor(e => cliente.Correo)</td>
                 <td>@Html.DisplayFor(e => cliente.Telefono)</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@cliente.IdCliente">Editar</a>
+                </td>
+                <td>
+                    <a asp-action="Delete" asp-route-id="@cliente.IdCliente">Borrar</a>
+                </td>
             </tr>
         }
 
