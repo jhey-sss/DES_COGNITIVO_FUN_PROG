@@ -78,7 +78,7 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
                 Correo = cliente.Correo,
                 Telefono = cliente.Telefono
 
-            };
+            }; 
             return View(model);
             
             
