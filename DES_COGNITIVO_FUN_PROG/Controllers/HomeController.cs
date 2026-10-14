@@ -1,9 +1,11 @@
 using DES_COGNITIVO_FUN_PROG.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
 namespace DES_COGNITIVO_FUN_PROG.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         public IActionResult Index()

@@ -1,0 +1,67 @@
+﻿@model DES_COGNITIVO_FUN_PROG.Models.ViewModels.AdministradorViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "login Administrativo";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DES_COGNITIVO_FUN_PROG</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/DES_COGNITIVO_FUN_PROG.styles.css" asp-append-version="true" />
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <div class="card-header bg-dark text-white text-center">
+                        <h4>Panel Administrativo</h4>
+
+                    </div>
+
+                    <div class="card-body">
+                        <form asp-action="Login" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger"> </div>
+                            <div class="form-group mb-3 ">
+                                <label asp-for="Usuario" class="control-label"></label>
+
+                                <input asp-for="Usuario" class="form-control" />
+                                <span asp-validation-for="Usuario" class="text-danger"></span>
+
+                            </div>
+                            <div>
+                                <label asp-for="ContraseñaHash" class="control-label"></label>
+                                <input asp-for="ContraseñaHash" class="form-control" />
+                                <span asp-validation-for="ContraseñaHash" class="text-danger"></span>
+
+                            </div>
+
+                            <button type="submit" class="btn btn-dark w-100">Iniciar sesion</button>
+                            <!--<a asp-action="Login" class="btn btn-secondary">Cancelar</a>-->
+
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+    }
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
