@@ -17,3 +17,6 @@ public partial class Mesa
 
     public virtual ICollection<Invitado> Invitados { get; set; } = new List<Invitado>();
 }
+
+
+// ac

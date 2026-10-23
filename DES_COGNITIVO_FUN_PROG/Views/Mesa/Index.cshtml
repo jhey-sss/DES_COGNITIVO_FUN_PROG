@@ -1,0 +1,28 @@
+﻿@model IEnumerable<DES_COGNITIVO_FUN_PROG.Models.Mesa>
+
+@{
+    ViewData["Title"] = "Mesas";
+}
+
+<h1>Mesas</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>IdMesa</th>
+            <th>IdEvento</th>
+            <th>NumeroMesa</th>
+            <th>Capacidad</th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>@item.IdMesa</td>
+            <td>@item.IdEvento</td>
+            <td>@item.NumeroMesa</td>
+            <td>@item.Capacidad</td>
+        </tr>
+}
+    </tbody>
+</table>
