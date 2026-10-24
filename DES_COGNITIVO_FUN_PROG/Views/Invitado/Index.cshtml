@@ -1,0 +1,120 @@
+﻿
+@model DES_COGNITIVO_FUN_PROG.Models.ViewModels.InvitadoViewModel
+
+@{
+    ViewData["Title"] = "Confirmación de Invitados";
+    var invitado = ViewBag.Invitado as DES_COGNITIVO_FUN_PROG.Models.ViewModels.InvitadoViewModel;
+}
+
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="text-center mb-4">Confirmación de Asistencia</h2>
+
+    <!-- Mensajes de Estado del Servidor -->
+    @if (ViewBag.Mensaje != null)
+    {
+        <div class="alert @(ViewBag.Guardado == true ? "alert-success" : "alert-warning") alert-dismissible fade show" role="alert">
+            @ViewBag.Mensaje
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Paso 1: Ingreso de Código / DNI -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Ingresa tu código de invitado</h5>
+            <form asp-action="Index" method="post">
+                @Html.AntiForgeryToken()
+                <div class="input-group mb-3">
+                    <input type="text" name="codigo" class="form-control" placeholder="Número de DNI" value="@(invitado?.Dni)" required />
+                    <button class="btn btn-primary" type="submit">Buscar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Paso 2: Mostrar Datos y Formulario de Respuesta (Si se encontró al invitado) -->
+    @if (invitado != null)
+    {
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Hola, <strong>@invitado.Nombres</strong></h5>
+                @if (ViewBag.NombreEvento != null)
+                {
+                    <small class="text-muted">Evento: @ViewBag.NombreEvento</small>
+                }
+            </div>
+            <div class="card-body">
+                <!-- Estado de la reservación actual -->
+                <p><strong>Número de DNI:</strong> @invitado.Dni</p>
+                <p>
+                    <strong>Estado actual:</strong> 
+                    @if (invitado.Confirmado == true)
+                    {
+                        <span class="badge bg-success">Confirmado (@invitado.NumAcompañantes acompañantes)</span>
+                    }
+                    @* @else if (invitado.Confirmado == false)
+                    {
+                        <span class="badge bg-danger">No asistirá</span>
+                    } *@
+                    else
+                    {
+                        <span class="badge bg-secondary">Pendiente de confirmación del invitado</span>
+                    }
+                </p>
+
+                <hr />
+
+                <!-- Formulario para responder / actualizar asistencia -->
+                <h6 class="mb-3">Actualiza tu respuesta:</h6>
+                <form asp-action="Responder" method="post">
+                    @Html.AntiForgeryToken()
+                    <!-- Pasamos el código/DNI oculto para que el controlador sepa a quién actualizar -->
+                    <input type="hidden" name="codigo" value="@invitado.Dni" />
+
+                    <div class="mb-3">
+                        <label class="form-label d-block">¿Asistirás al evento?</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="respuesta" id="respuestaS" value="S" @(invitado.Confirmado == true ? "checked" : "") required>
+                            <label class="form-check-input-label" for="respuestaS">Sí, asistiré</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="respuesta" id="respuestaN" value="N" @(invitado.Confirmado == false ? "checked" : "")>
+                            <label class="form-check-input-label" for="respuestaN">No podré asistir</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="seccionAcompanantes">
+                        <label for="acompanantes" class="form-label">Número de acompañantes:</label>
+                        <input type="number" name="acompanantes" id="acompanantes" class="form-control" min="0" max="10" value="@(invitado.NumAcompañantes ?? 0)" />
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">Enviar Respuesta</button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Script opcional para ocultar dinámicamente los acompañantes si dice que NO asistirá -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const radioS = document.getElementById("respuestaS");
+        const radioN = document.getElementById("respuestaN");
+        const seccionAco = document.getElementById("seccionAcompanantes");
+
+        if(radioS && radioN && seccionAco) {
+            function evaluarVisibilidad() {
+                if (radioN.checked) {
+                    seccionAco.style.display = "none";
+                    document.getElementById("acompanantes").value = 0;
+                } else {
+                    seccionAco.style.display = "block";
+                }
+            }
+
+            radioS.addEventListener("change", evaluarVisibilidad);
+            radioN.addEventListener("change", evaluarVisibilidad);
+            evaluarVisibilidad(); // Ejecutar al cargar la vista
+        }
+    });
+</script>
