@@ -1,72 +1,86 @@
-﻿@model List<Evento>;
+﻿@model List<DES_COGNITIVO_FUN_PROG.Models.Evento>
 
-<h1>Eventos</h1>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Eventos</h2>
+        <a asp-action="Create" class="btn btn-success shadow-sm">
+            <i class="bi bi-calendar-plus-fill"></i> Crear Nuevo Evento
+        </a>
+    </div>
+    <div>
+        <form asp-controller="Evento" asp-action="Index">
+            <p>
+                Buscar <input type="number" name="Buscar" value="@ViewData["BusquedaEventos"]" class="form-text" />
+                <input type="submit" value="buscar"  class="btn btn-dark" />
+                <a asp-controller="Evento" asp-action="Index" class="btn btn-secondary">Limpiar</a>
+            </p>
 
-<table class="table"> <!-- Se crea la tabla completa -->
-    <thead>
-        <!-- este es el encabezado de la tabla -->
-        <tr> <!-- crea una fila dentro de una tabla -->
-            
-            <th> <!-- cada uno es un encabezado de una columna -->
-                IdEvento <!-- este es el encabezado -->
-            </th>
-            <th>
-                CodigoEvento
-            </th>
-            <th>
-                <!-- cada uno es un encabezado de una columna -->
-                Lugar <!-- este es el encabezado -->
-            </th>
-            <th>
-                Nombre
-            </th>
-            <th>
-                <!-- cada uno es un encabezado de una columna -->
-                Presupuesto <!-- este es el encabezado -->
-            </th>
-            <th>
-                IdCliente
-            </th>
-            <th>
-                <!-- cada uno es un encabezado de una columna -->
-                NumeroIdentidad <!-- este es el encabezado -->
-            </th>
-            <th>
-                Nombre
-            </th>
-            <th>
-                <!-- cada uno es un encabezado de una columna -->
-                Correo <!-- este es el encabezado -->
-            </th>
-            <th>
-                Telefono
-            </th>
-        </tr>
+        </form>
 
-    
-    </thead>    <!-- cierre de la cabecera de la tabla -->
-
-    <tbody>
-        <!-- se crea el cuerpo de la tabla donde se vera reflejada la información -->
-        @foreach (var evento in Model)
-        {
-            <tr>
-                <td>@Html.DisplayFor(e=>evento.IdEvento)</td>
-                <td>@Html.DisplayFor(e => evento.CodigoEvento)</td>
-                <td>@Html.DisplayFor(e => evento.Lugar)</td>
-                <td>@Html.DisplayFor(e => evento.Nombre)</td>
-                <td>@Html.DisplayFor(e => evento.Presupuesto)</td>
-                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.IdCliente)</td>
-                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.NumeroIdentidad)</td>
-                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.Nombre)</td>
-                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.Correo)</td>
-                <td>@Html.DisplayFor(e => evento.IdClienteNavigation.Telefono)</td>
-
-            </tr>
-        }
-
-    </tbody>
+    </div>
 
 
-    
-</table>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="px-3">Código</th>
+                            <th>Evento</th>
+                            <th>Fecha y Lugar</th>
+                            <th>Presupuesto</th>
+                            <th>Cliente Responsable</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var evento in Model)
+                            {
+                                <tr>
+                                    <td class="px-3 fw-bold">@evento.CodigoEvento</td>
+                                    <td>@evento.Nombre</td>
+                                    <td>
+                                        <div><i class="bi bi-calendar-event text-primary"></i> @evento.Fecha</div>
+                                        <small class="text-muted"><i class="bi bi-geo-alt text-danger"></i> @evento.Lugar</small>
+                                    </td>
+                                    <td>$ @evento.Presupuesto.ToString("N2")</td>
+                                    <td>
+                                        <!-- Mostramos el nombre del cliente y su correo como subtítulo -->
+                                        <div>@evento.IdClienteNavigation?.Nombre</div>
+                                        <small class="text-muted">@evento.IdClienteNavigation?.Correo</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Edit" asp-route-id="@evento.IdEvento" class="btn btn-outline-primary btn-sm" title="Editar">
+                                                Editar
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@evento.IdEvento" class="btn btn-outline-danger btn-sm" title="Desactivar">
+                                                Borrar
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center p-4 text-muted">
+                                    No hay eventos registrados o activos en este momento.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

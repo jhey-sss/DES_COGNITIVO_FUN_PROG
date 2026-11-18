@@ -15,7 +15,7 @@ public partial class Cliente
 
     public string? Telefono { get; set; }
 
-    public bool Activo { get; set; } = true;
+    public bool Activo { get; set; }
 
     public virtual ICollection<Evento> Eventos { get; set; } = new List<Evento>();
 }

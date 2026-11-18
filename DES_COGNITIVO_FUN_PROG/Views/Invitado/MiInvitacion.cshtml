@@ -1,0 +1,67 @@
+﻿@using DES_COGNITIVO_FUN_PROG.Models.ViewModels
+@model InvitadoConfirmacionViewModel
+
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="text-center mb-5">
+        <h2>Hola, <span class="text-primary">@Model.Nombres</span></h2>
+        <p class="lead">Por favor confirma tu asistencia a nuestro evento.</p>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form asp-action="ConfirmarAsistencia" method="post">
+                <input type="hidden" asp-for="IdInvitado" />
+
+                <div class="form-group mb-4 text-center">
+                    <label class="fw-bold fs-5 mb-3">¿Asistirás al evento?</label><br />
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="Confirmado" id="btnradio1" value="true" @(Model.Confirmado ? "checked" : "")>
+                        <label class="btn btn-outline-success px-4" for="btnradio1">Sí, asistiré</label>
+
+                        <input type="radio" class="btn-check" name="Confirmado" id="btnradio2" value="false" @(!Model.Confirmado ? "checked" : "")>
+                        <label class="btn btn-outline-danger px-4" for="btnradio2">No podré asistir</label>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="NumAcompañantes" class="form-label fw-bold"></label>
+                    <input asp-for="NumAcompañantes" class="form-control" type="number" min="0" />
+                    <span asp-validation-for="NumAcompañantes" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label asp-for="RestriccionesAlimentarias" class="form-label fw-bold"></label>
+                    <input asp-for="RestriccionesAlimentarias" class="form-control" placeholder="Ej: Vegano, Alergia a mariscos..." />
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">Enviar Confirmación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sección de compañeros de mesa -->
+    <div class="card shadow-sm bg-light">
+        <div class="card-body p-4 text-center">
+            <h5 class="card-title fw-bold text-secondary"Compartirás mesa con:</h5>
+            @if (Model.CompañerosDeMesa.Any())
+            {
+                <ul class="list-unstyled mt-3 mb-0 fs-5">
+                    @foreach (var companero in Model.CompañerosDeMesa)
+                    {
+                        <li class="mb-2"><strong>@companero</strong></li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-muted mt-3 mb-0">Aún no se te han asignado compañeros de mesa.</p>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

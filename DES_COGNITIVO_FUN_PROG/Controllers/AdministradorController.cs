@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 namespace DES_COGNITIVO_FUN_PROG.Controllers
 {
     [Authorize(Roles = "Admin")]
-    [Authorize]
     public class AdministradorController : Controller
     {
         

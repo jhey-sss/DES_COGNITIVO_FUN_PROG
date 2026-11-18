@@ -1,0 +1,36 @@
+﻿@using DES_COGNITIVO_FUN_PROG.Models.ViewModels
+@model BuscarInvitacionViewModel
+
+@{
+    // Opcional: puedes poner Layout = null; si no quieres que se vea la barra de navegación del administrador
+    // Layout = "_Layout"; 
+}
+
+<div class="container text-center mt-5">
+    <div class="card shadow-sm mx-auto" style="max-width: 400px;">
+        <div class="card-body p-5">
+            <h3 class="mb-3">Bienvenido</h3>
+            <p class="text-muted mb-4">Ingresa tu número de documento para acceder a tu invitación.</p>
+
+            <form asp-action="Acceso" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                
+                <!-- Mantenemos el ID del Evento oculto -->
+                <input type="hidden" asp-for="IdEvento" />
+
+                <div class="form-group mb-4">
+                    <input asp-for="DNI" class="form-control form-control-lg text-center" placeholder="Número de DNI" />
+                    <span asp-validation-for="DNI" class="text-danger"></span>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">Buscar mi invitación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

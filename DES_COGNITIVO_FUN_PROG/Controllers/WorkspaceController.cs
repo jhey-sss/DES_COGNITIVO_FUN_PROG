@@ -1,8 +1,10 @@
 ﻿using DES_COGNITIVO_FUN_PROG.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace DES_COGNITIVO_FUN_PROG.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class WorkspaceController : Controller
     {
         private readonly GestionEventosContext _context; //esta es una clase que es el puente de la inyeccion de dependencias 
@@ -18,5 +20,6 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
             //aqui se retorna los datos a la vista a traves de la conexion _context con una lista asincronica. el cual devuelve la tabla Clientes
             return View(await _context.Clientes.ToListAsync()); 
         }
+
     }
 }

@@ -1,194 +1,287 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using DES_COGNITIVO_FUN_PROG.Models;
+﻿using DES_COGNITIVO_FUN_PROG.Models;
 using DES_COGNITIVO_FUN_PROG.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DES_COGNITIVO_FUN_PROG.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class InvitadoController : Controller
     {
-        // Datos de prueba compartidos entre las solicitudes web.
+        private readonly GestionEventosContext _context;
 
-        private readonly GestionEventosContext _context; // aqui se define la conexion entre la inyeccion de dependencias y este constructor
-
-        public InvitadoController(GestionEventosContext Context)
+        public InvitadoController(GestionEventosContext context)
         {
-            _context = Context;
+            _context = context;
         }
 
+       // PARTE 1: MÓDULO DEL ADMINISTRADOR (CRUD)
+       // aqui solo puede acceder el aministrador para manejar el crud completo
 
-        [HttpGet]
-        public IActionResult Index()
+        // GET: Invitado
+        public async Task<IActionResult> Index(string? buscar)
         {
+            var invitados = _context.Invitados
+                .Include(i => i.IdEventoNavigation)
+                .Include(i => i.IdMesaNavigation)
+                .Where(i => i.Activo == true);
 
-            return View();
+            if (!string.IsNullOrEmpty(buscar))
+            {
+                invitados = invitados.Where(i => i.Dni.Contains(buscar));
+            }
+
+            ViewData["BusquedaInvitado"] = buscar;
+
+            var BuscarInvitado = await invitados.ToListAsync();
+            return View(BuscarInvitado);
         }
 
-        //        [HttpPost]
-        //        [ValidateAntiForgeryToken]
-        //        public IActionResult Index(string codigo)
-        //        {
-        //            ViewBag.CodigoEvento = CodigoEvento;
-        //            ViewBag.NombreEvento = NombreEvento;
+        // GET: Invitado/Create
+        public IActionResult Create()
+        {
+            ViewData["IdEvento"] = new SelectList(_context.Eventos.Where(e => e.Activo == true), "IdEvento", "Nombre");
+            ViewData["IdMesa"] = new SelectList(_context.Mesas.Where(m => m.Activo == true), "IdMesa", "NumeroMesa");
+            var model = new InvitadoAdminViewModel();
+            return View(model);
+        }
 
-        //            if (string.IsNullOrWhiteSpace(codigo))
-        //            {
-        //                ViewBag.Mensaje = "Ingresa tu código de invitado.";
-        //                return View();
-        //            }
-
-        //            Invitado? invitado = registro.BuscarInvitado(codigo);
-
-        //            if (invitado == null)
-        //            {
-        //                ViewBag.Mensaje =
-        //                    "El código ingresado no es válido.";
-        //                return View();
-        //            }
-
-        //            ViewBag.Invitado = invitado;
-        //            return View();
-        //        }
-
-        //        [HttpPost]
-        //        [ValidateAntiForgeryToken]
-        //        public IActionResult Responder(
-        //            string codigo, string respuesta, int acompanantes = 0)
-        //        {
-        //            ViewBag.CodigoEvento = CodigoEvento;
-        //            ViewBag.NombreEvento = NombreEvento;
-
-        //            Invitado? invitado = registro.BuscarInvitado(codigo);
-
-        //            if (invitado == null)
-        //            {
-        //                ViewBag.Mensaje = "El código de invitado no es válido.";
-        //                return View("Index");
-        //            }
-
-        //            if (respuesta != "S" && respuesta != "N")
-        //            {
-        //                ViewBag.Mensaje = "Selecciona si asistirás o no.";
-        //                ViewBag.Invitado = invitado;
-        //                return View("Index");
-        //            }
-
-        //            bool asistira = respuesta == "S";
-
-        //            bool guardado = registro.RegistrarRespuesta(
-        //                invitado, asistira, acompanantes, out string mensaje);
-
-        //            ViewBag.Mensaje = mensaje;
-        //            ViewBag.Invitado = invitado;
-        //            ViewBag.Guardado = guardado;
-
-        //            return View("Index");
-        //        }
-
-
+        // POST: Invitado/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Index(string codigo)
+        public async Task<IActionResult> Create(InvitadoAdminViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(codigo))
+            if (ModelState.IsValid)
             {
-                ViewBag.Mensaje = "Ingresa tu código de invitado (DNI).";
-                return View();
-            }
+                var invitado = new Invitado()
+                {
+                    IdEvento = model.IdEvento,
+                    IdMesa = model.IdMesa,
+                    Nombres = model.Nombres,
+                    Dni = model.DNI,
+                    Correo = model.Correo,
+                    Telefono = model.Telefono,
+                    RestriccionesAlimentarias = model.RestriccionesAlimentarias,
+                    Confirmado = model.Confirmado,
+                    NumAcompañantes = model.NumAcompañantes,
+                    Activo = true
+                };
 
-            // Buscamos el invitado en la base de datos usando el DNI como código
-            var invitadoDb = await _context.Invitados
-                .FirstOrDefaultAsync(i => i.Dni == codigo);
-
-            if (invitadoDb == null)
-            {
-                ViewBag.Mensaje = "El código ingresado no es válido.";
-                return View();
-            }
-
-            // Mapeamos el modelo de la Base de Datos al ViewModel
-            var viewModel = new InvitadoViewModel
-            {
-                IdInvitado = invitadoDb.IdInvitado,
-                IdEvento = invitadoDb.IdEvento,
-                IdMesa = invitadoDb.IdMesa,
-                Nombres = invitadoDb.Nombres,
-                Dni = invitadoDb.Dni,
-                Confirmado = invitadoDb.Confirmado,
-                NumAcompañantes = invitadoDb.NumAcompañantes,
-                FechaConfirmacion = invitadoDb.FechaConfirmacion
-            };
-
-            // Opcional: Si necesitas cargar datos del evento relacionado para tus ViewBags
-            var evento = await _context.Eventos.FindAsync(viewModel.IdEvento);
-            if (evento != null)
-            {
-                ViewBag.CodigoEvento = evento.IdEvento; // o el campo código que uses
-                ViewBag.NombreEvento = evento.Nombre;  // asumiendo que tiene la propiedad Nombre
-            }
-
-            ViewBag.Invitado = viewModel;
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Responder(string codigo, string respuesta, int acompanantes = 0)
-        {
-            if (respuesta != "S" && respuesta != "N")
-            {
-                ViewBag.Mensaje = "Selecciona si asistirás o no.";
+                _context.Add(invitado);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
 
-            // Buscamos al invitado en la base de datos
-            var invitadoDb = await _context.Invitados
-                .FirstOrDefaultAsync(i => i.Dni == codigo);
+            ViewData["IdEvento"] = new SelectList(_context.Eventos.Where(e => e.Activo == true), "IdEvento", "Nombre", model.IdEvento);
+            ViewData["IdMesa"] = new SelectList(_context.Mesas.Where(m => m.Activo == true), "IdMesa", "NumeroMesa", model.IdMesa);
+            return View(model);
+        }
 
-            if (invitadoDb == null)
+        // GET: Invitado/Edit/5
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var invitado = await _context.Invitados.FindAsync(id);
+            if (invitado == null || invitado.Activo == false) return NotFound();
+
+            var model = new InvitadoAdminViewModel()
             {
-                ViewBag.Mensaje = "El código de invitado no es válido.";
-                return View("Index");
-            }
-
-            try
-            {
-                // Actualizamos las propiedades del registro de la base de datos
-                invitadoDb.Confirmado = (respuesta == "S");
-                invitadoDb.NumAcompañantes = acompanantes;
-                invitadoDb.FechaConfirmacion = DateOnly.FromDateTime(DateTime.Now);
-
-                // Guardamos los cambios de manera asíncrona en la base de datos
-                _context.Update(invitadoDb);
-                await _context.SaveChangesAsync();
-
-                ViewBag.Mensaje = respuesta == "S"
-                    ? "¡Confirmaste tu asistencia con éxito!"
-                    : "Has declinado la invitación.";
-                ViewBag.Guardado = true;
-            }
-            catch (Exception ex)
-            {
-                ViewBag.Mensaje = "Ocurrió un error al guardar tu respuesta de confirmación.";
-                ViewBag.Guardado = false;
-            }
-
-            // Volvemos a mapear al ViewModel para mantener la información en la vista externa
-            var viewModel = new InvitadoViewModel
-            {
-                IdInvitado = invitadoDb.IdInvitado,
-                IdEvento = invitadoDb.IdEvento,
-                IdMesa = invitadoDb.IdMesa,
-                Nombres = invitadoDb.Nombres,
-                Dni = invitadoDb.Dni,
-                Confirmado = invitadoDb.Confirmado,
-                NumAcompañantes = invitadoDb.NumAcompañantes,
-                FechaConfirmacion = invitadoDb.FechaConfirmacion
+                IdInvitado = invitado.IdInvitado,
+                IdEvento = invitado.IdEvento,
+                IdMesa = invitado.IdMesa,
+                Nombres = invitado.Nombres,
+                DNI = invitado.Dni,
+                Correo = invitado.Correo,
+                Telefono = invitado.Telefono,
+                RestriccionesAlimentarias = invitado.RestriccionesAlimentarias,
+                Confirmado = invitado.Confirmado ?? false,
+                NumAcompañantes = invitado.NumAcompañantes ?? 0
             };
 
-            ViewBag.Invitado = viewModel;
-            return View("Index");
+            ViewData["IdEvento"] = new SelectList(_context.Eventos.Where(e => e.Activo == true), "IdEvento", "Nombre", model.IdEvento);
+            ViewData["IdMesa"] = new SelectList(_context.Mesas.Where(m => m.Activo == true), "IdMesa", "NumeroMesa", model.IdMesa);
+            return View(model);
+        }
+
+        // POST: Invitado/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, InvitadoAdminViewModel model)
+        {
+            if (id != model.IdInvitado) return NotFound();
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var invitado = await _context.Invitados.FindAsync(id);
+                    if (invitado == null) return NotFound();
+
+                    invitado.IdEvento = model.IdEvento;
+                    invitado.IdMesa = model.IdMesa;
+                    invitado.Nombres = model.Nombres;
+                    invitado.Dni = model.DNI;
+                    invitado.Correo = model.Correo;
+                    invitado.Telefono = model.Telefono;
+                    invitado.RestriccionesAlimentarias = model.RestriccionesAlimentarias;
+                    invitado.Confirmado = model.Confirmado;
+                    invitado.NumAcompañantes = model.NumAcompañantes;
+
+                    _context.Update(invitado);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!InvitadoExists(model.IdInvitado)) return NotFound();
+                    else throw;
+                }
+                return RedirectToAction(nameof(Index));
+            }
+
+            ViewData["IdEvento"] = new SelectList(_context.Eventos.Where(e => e.Activo == true), "IdEvento", "Nombre", model.IdEvento);
+            ViewData["IdMesa"] = new SelectList(_context.Mesas.Where(m => m.Activo == true), "IdMesa", "NumeroMesa", model.IdMesa);
+            return View(model);
+        }
+
+        // GET: Invitado/Delete/5
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var invitado = await _context.Invitados
+                .Include(i => i.IdEventoNavigation)
+                .Include(i => i.IdMesaNavigation)
+                .FirstOrDefaultAsync(m => m.IdInvitado == id);
+
+            if (invitado == null || invitado.Activo == false) return NotFound();
+
+            var model = new InvitadoAdminViewModel()
+            {
+                IdInvitado = invitado.IdInvitado,
+                Nombres = invitado.Nombres,
+                DNI = invitado.Dni,
+                Correo = invitado.Correo
+            };
+
+            ViewBag.NombreEvento = invitado.IdEventoNavigation?.Nombre;
+            ViewBag.NumeroMesa = invitado.IdMesaNavigation?.NumeroMesa.ToString() ?? "Sin mesa asignada";
+
+            return View(model);
+        }
+
+        // POST: Invitado/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id, InvitadoAdminViewModel model)
+        {
+            try
+            {
+                var invitado = await _context.Invitados.FindAsync(id);
+                if (invitado == null) return NotFound();
+
+                invitado.Activo = false; // Borrado lógico
+                _context.Invitados.Update(invitado);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!InvitadoExists(model.IdInvitado)) return NotFound();
+                else throw;
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        private bool InvitadoExists(int id)
+        {
+            return _context.Invitados.Any(e => e.IdInvitado == id);
+        }
+
+        // PARTE 2: MÓDULO DEL INVITADO PÚBLICO (Acceso y Confirmación)
+        //aqui accede el usuario para tener acceso a registrar su aceptacion y declinacion de la invitacion
+
+        // falta implementrr el escrapeo a la web del dni.com, para realizar un cruce de informacion de los dnis no registrados
+
+        [AllowAnonymous]
+        // GET: /Invitado/Acceso/1
+        [HttpGet]
+        [Route("Invitado/Acceso/{idEvento}")]
+        public IActionResult Acceso(int idEvento)
+        {
+            var model = new BuscarInvitacionViewModel { IdEvento = idEvento };
+            return View(model);
+        }
+
+        // POST: /Invitado/Acceso/1
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("Invitado/Acceso/{idEvento}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Acceso(BuscarInvitacionViewModel login)
+        {
+            if (!ModelState.IsValid) return View(login);
+
+            // Buscar invitado activo por DNI en ese evento específico
+            var invitado = await _context.Invitados
+                .FirstOrDefaultAsync(i => i.IdEvento == login.IdEvento && i.Dni == login.DNI && i.Activo == true);
+
+            if (invitado == null)
+            {
+                ModelState.AddModelError(string.Empty, "No se encontró una invitación con este DNI para este evento.");
+                return View(login);
+            }
+
+            // Buscar compañeros de mesa (misma mesa, que no sea él mismo y que estén activos)
+            var companeros = new List<string>();
+            if (invitado.IdMesa != null)
+            {
+                companeros = await _context.Invitados
+                    .Where(i => i.IdMesa == invitado.IdMesa && i.IdInvitado != invitado.IdInvitado && i.Activo == true)
+                    .Select(i => i.Nombres)
+                    .ToListAsync();
+            }
+
+            // Cargar el modelo de confirmación
+            var modelConfirmacion = new InvitadoConfirmacionViewModel
+            {
+                IdInvitado = invitado.IdInvitado,
+                Nombres = invitado.Nombres,
+                Confirmado = invitado.Confirmado ?? false,
+                NumAcompañantes = invitado.NumAcompañantes ?? 0,
+                RestriccionesAlimentarias = invitado.RestriccionesAlimentarias,
+                CompañerosDeMesa = companeros
+            };
+
+            // Renderizar la vista MiInvitacion (la URL se mantiene en /Invitado/Acceso/Id para seguridad)
+            return View("MiInvitacion", modelConfirmacion);
+        }
+
+        // POST: /Invitado/ConfirmarAsistencia
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmarAsistencia(InvitadoConfirmacionViewModel model)
+        {
+            var invitado = await _context.Invitados.FindAsync(model.IdInvitado);
+            if (invitado == null || invitado.Activo == false) return NotFound();
+
+            // Solo permitimos modificar estos campos al invitado
+            invitado.Confirmado = model.Confirmado;
+            invitado.NumAcompañantes = model.NumAcompañantes;
+            invitado.RestriccionesAlimentarias = model.RestriccionesAlimentarias;
+            invitado.FechaConfirmacion = DateOnly.FromDateTime(DateTime.Now);
+
+            _context.Update(invitado);
+            await _context.SaveChangesAsync();
+
+            // Redirigir a una página de agradecimiento
+            return View("ConfirmacionExitosa");
         }
     }
 }

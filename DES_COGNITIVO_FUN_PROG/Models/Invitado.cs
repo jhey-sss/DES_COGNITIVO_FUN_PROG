@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DES_COGNITIVO_FUN_PROG.Models;
 
@@ -19,6 +20,14 @@ public partial class Invitado
     public int? NumAcompañantes { get; set; }
 
     public DateOnly? FechaConfirmacion { get; set; }
+
+    public string? Correo { get; set; }
+
+    public string? Telefono { get; set; }
+
+    public string? RestriccionesAlimentarias { get; set; }
+
+    public bool? Activo { get; set; }
 
     public virtual Evento IdEventoNavigation { get; set; } = null!;
 

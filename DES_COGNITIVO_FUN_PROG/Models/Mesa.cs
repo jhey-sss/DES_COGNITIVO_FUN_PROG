@@ -13,10 +13,11 @@ public partial class Mesa
 
     public int Capacidad { get; set; }
 
+    public string? NombreMesa { get; set; }
+
+    public bool? Activo { get; set; }
+
     public virtual Evento IdEventoNavigation { get; set; } = null!;
 
     public virtual ICollection<Invitado> Invitados { get; set; } = new List<Invitado>();
 }
-
-
-// ac

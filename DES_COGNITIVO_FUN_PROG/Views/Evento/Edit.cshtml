@@ -1,0 +1,78 @@
+﻿@using DES_COGNITIVO_FUN_PROG.Models.ViewModels;
+@model EventoViewModel
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-warning text-dark">
+            <h3 class="mb-0">Editar Evento</h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="Edit">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <input type="hidden" asp-for="IdEvento"/>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="IdCliente" class="form-label fw-bold"></label>
+                        <select asp-for="IdCliente" class="form-select" asp-items="ViewBag.IdCliente"></select>
+                        <span asp-validation-for="IdCliente" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="IdEstado" class="form-label fw-bold"></label>
+                        <select asp-for="IdEstado" class="form-select" asp-items="ViewBag.IdEstado"></select>
+                        <span asp-validation-for="IdEstado" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Nombre" class="form-label fw-bold"></label>
+                        <input asp-for="Nombre" class="form-control" />
+                        <span asp-validation-for="Nombre" class="text-danger small"></span>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="CodigoEvento" class="form-label fw-bold"></label>
+                        <input asp-for="CodigoEvento" class="form-control" />
+                        <span asp-validation-for="CodigoEvento" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Fecha" class="form-label fw-bold"></label>
+                        <input asp-for="Fecha" class="form-control" type="date" />
+                        <span asp-validation-for="Fecha" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Presupuesto" class="form-label fw-bold"></label>
+                        <div class="input-group">
+                            <span class="input-group-text">\$</span>
+                            <input asp-for="Presupuesto" class="form-control" type="number" step="0.01" />
+                        </div>
+                        <span asp-validation-for="Presupuesto" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <label asp-for="Lugar" class="form-label fw-bold"></label>
+                        <input asp-for="Lugar" class="form-control" />
+                        <span asp-validation-for="Lugar" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat"></i> Actualizar Evento
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form> 
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -9,5 +9,7 @@ public partial class EstadoEvento
 
     public string EstadoEvento1 { get; set; } = null!;
 
+    public bool? Activo { get; set; }
+
     public virtual ICollection<Evento> Eventos { get; set; } = new List<Evento>();
 }
