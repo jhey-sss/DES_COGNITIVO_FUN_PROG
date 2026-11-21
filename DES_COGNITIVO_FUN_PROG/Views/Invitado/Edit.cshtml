@@ -1,0 +1,61 @@
+﻿@using DES_COGNITIVO_FUN_PROG.Models.ViewModels
+@model InvitadoAdminViewModel
+
+<h1>Editar Invitado</h1>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="IdInvitado" />
+            
+            <div class="row">
+                <div class="col-md-6 form-group mb-3">
+                    <label asp-for="IdEvento" class="control-label"></label>
+                    <select asp-for="IdEvento" class="form-control" asp-items="ViewBag.IdEvento"></select>
+                    <span asp-validation-for="IdEvento" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 form-group mb-3">
+                    <label asp-for="IdMesa" class="control-label"></label>
+                    <select asp-for="IdMesa" class="form-control" asp-items="ViewBag.IdMesa">
+                        <option value="">-- Sin mesa asignada --</option>
+                    </select>
+                    <span asp-validation-for="IdMesa" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Nombres" class="control-label"></label>
+                <input asp-for="Nombres" class="form-control" />
+                <span asp-validation-for="Nombres" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 form-group mb-3">
+                    <label asp-for="DNI" class="control-label"></label>
+                    <input asp-for="DNI" class="form-control" />
+                    <span asp-validation-for="DNI" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 form-group mb-3">
+                    <label asp-for="NumAcompañantes" class="control-label"></label>
+                    <input asp-for="NumAcompañantes" class="form-control" type="number" />
+                    <span asp-validation-for="NumAcompañantes" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="Confirmado" class="form-check-input" />
+                <label asp-for="Confirmado" class="form-check-label">Asistencia Confirmada</label>
+            </div>
+
+            <div class="form-group mb-4">
+                <input type="submit" value="Guardar Cambios" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

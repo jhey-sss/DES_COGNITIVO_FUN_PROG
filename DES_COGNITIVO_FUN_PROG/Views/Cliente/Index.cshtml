@@ -1,44 +1,60 @@
 ﻿@model List<DES_COGNITIVO_FUN_PROG.Models.Cliente>
 
-<h1>Clientes</h1>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Clientes</h2>
+        <a asp-action="Create" class="btn btn-success shadow-sm">
+            <i class="bi bi-person-plus-fill"></i> Registrar Nuevo Cliente
+        </a>
+    </div>
 
-<p>
-    <a asp-action="Create">Crear</a>
-</p>
-
-
-
-
-<table class="table">
-    <thead> <!-- Abre la cabesera de la tabla -->
-
-        <tr>
-            <th>IdCliente</th>
-            <th>NumeroIdentidad</th>
-            <th>Nombre</th>
-             <th>Correo</th>
-            <th>Telefono</th>
-        </tr>
-
-    </thead>
-    <tbody>
-        @foreach (var cliente in Model)
-        {
-            <tr>
-                <td>@Html.DisplayFor(e => cliente.IdCliente)</td>
-                <td>@Html.DisplayFor(e => cliente.NumeroIdentidad)</td>
-                <td>@Html.DisplayFor(e => cliente.Nombre)</td>
-                <td>@Html.DisplayFor(e => cliente.Correo)</td>
-                <td>@Html.DisplayFor(e => cliente.Telefono)</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@cliente.IdCliente">Editar</a>
-                </td>
-                <td>
-                    <a asp-action="Delete" asp-route-id="@cliente.IdCliente">Borrar</a>
-                </td>
-            </tr>
-        }
-
-    </tbody>
-
-</table>
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="px-3">DNI/RUC</th>
+                            <th>Nombre o Razón Social</th>
+                            <th>Correo Electrónico</th>
+                            <th>Teléfono</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var cliente in Model)
+                            {
+                                <tr>
+                                    <td class="px-3">@Html.DisplayFor(e => cliente.NumeroIdentidad)</td>
+                                    <td class="fw-bold">@Html.DisplayFor(e => cliente.Nombre)</td>
+                                    <td>@Html.DisplayFor(e => cliente.Correo)</td>
+                                    <td>@Html.DisplayFor(e => cliente.Telefono)</td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Edit" asp-route-id="@cliente.IdCliente" class="btn btn-outline-primary btn-sm" title="Editar">
+                                                Editar
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@cliente.IdCliente" class="btn btn-outline-danger btn-sm" title="Desactivar">
+                                                Borrar
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center p-4 text-muted">
+                                    No hay clientes registrados o activos en este momento.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

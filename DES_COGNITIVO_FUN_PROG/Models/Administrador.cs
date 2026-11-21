@@ -10,4 +10,8 @@ public partial class Administrador
     public string Usuario { get; set; } = null!;
 
     public string ContraseñaHash { get; set; } = null!;
+
+    public string? Correo { get; set; }
+
+    public bool? Activo { get; set; }
 }

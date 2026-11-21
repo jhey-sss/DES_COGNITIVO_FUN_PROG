@@ -1,6 +1,7 @@
 ﻿using AspNetCoreGeneratedDocument;
 using DES_COGNITIVO_FUN_PROG.Models;
 using DES_COGNITIVO_FUN_PROG.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Validation;
 
 namespace DES_COGNITIVO_FUN_PROG.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class ClienteController : Controller
     {
         private readonly GestionEventosContext _context; // aqui se define la conexion entre la inyeccion de dependencias y este constructor
@@ -43,7 +45,8 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
                     NumeroIdentidad = model.NumeroIdentidad,
                     Nombre = model.Nombre,
                     Correo = model.Correo,
-                    Telefono = model.Telefono
+                    Telefono = model.Telefono,
+                    Activo = true
 
                 };
                 _context.Add(cliente); //aqui guardamos los datos en entity framework
@@ -76,7 +79,8 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
                 NumeroIdentidad = cliente.NumeroIdentidad,
                 Nombre = cliente.Nombre,
                 Correo = cliente.Correo,
-                Telefono = cliente.Telefono
+                Telefono = cliente.Telefono,
+              
 
             }; 
             return View(model);

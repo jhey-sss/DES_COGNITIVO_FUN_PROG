@@ -21,6 +21,10 @@ public partial class Evento
 
     public string CodigoEvento { get; set; } = null!;
 
+    public string? Descripcion { get; set; }
+
+    public bool? Activo { get; set; }
+
     public virtual Cliente IdClienteNavigation { get; set; } = null!;
 
     public virtual EstadoEvento IdEstadoNavigation { get; set; } = null!;

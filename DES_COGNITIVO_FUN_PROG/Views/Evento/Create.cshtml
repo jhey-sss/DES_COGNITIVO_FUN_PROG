@@ -1,13 +1,76 @@
-﻿<h1>Crear Evento</h1>
+﻿@using DES_COGNITIVO_FUN_PROG.Models.ViewModels;
+@model EventoViewModel
 
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Crear Nuevo Evento</h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create">
+                <!-- CAMBIO CLAVE: "All" en lugar de "ModelOnly" para ver los errores ocultos -->
+                <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="IdCliente" class="form-label fw-bold"></label>
+                        <select asp-for="IdCliente" class="form-select" asp-items="ViewBag.IdCliente">
+                            <option value="">-- Seleccione un Cliente --</option>
+                        </select>
+                        <span asp-validation-for="IdCliente" class="text-danger small"></span>
+                    </div>
 
-        </form>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="IdEstado" class="form-label fw-bold"></label>
+                        <select asp-for="IdEstado" class="form-select" asp-items="ViewBag.IdEstado">
+                            <option value="">-- Seleccione un Estado --</option>
+                        </select>
+                        <span asp-validation-for="IdEstado" class="text-danger small"></span>
+                    </div>
+                </div>
 
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label asp-for="Nombre" class="form-label fw-bold"></label>
+                        <input asp-for="Nombre" class="form-control" placeholder="Nombre del evento (Ej. Boda Civil)" />
+                        <span asp-validation-for="Nombre" class="text-danger small"></span>
+                    </div>
+                </div> <!-- FALTABA ESTE CIERRE DE DIV -->
+                    
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Fecha" class="form-label fw-bold"></label>
+                        <input asp-for="Fecha" class="form-control" type="date" />
+                        <span asp-validation-for="Fecha" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Presupuesto" class="form-label fw-bold"></label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input asp-for="Presupuesto" class="form-control" type="number" step="0.01" />
+                        </div>
+                        <span asp-validation-for="Presupuesto" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <label asp-for="Lugar" class="form-label fw-bold"></label>
+                        <input asp-for="Lugar" class="form-control" placeholder="Lugar o Dirección" />
+                        <span asp-validation-for="Lugar" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-2">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save"></i> Guardar Evento
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
     </div>
-
 </div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

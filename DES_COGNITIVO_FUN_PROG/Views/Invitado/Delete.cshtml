@@ -1,0 +1,27 @@
+﻿@using DES_COGNITIVO_FUN_PROG.Models.ViewModels
+@model InvitadoAdminViewModel
+
+<h1>Eliminar Invitado</h1>
+<h3 class="text-danger">¿Estás seguro de que deseas eliminar este invitado?</h3>
+<hr />
+<div>
+    <dl class="row">
+        <dt class="col-sm-3">Evento</dt>
+        <dd class="col-sm-9">@ViewBag.NombreEvento</dd>
+
+        <dt class="col-sm-3">Mesa</dt>
+        <dd class="col-sm-9">@ViewBag.NumeroMesa</dd>
+
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Nombres)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Nombres)</dd>
+
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DNI)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.DNI)</dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="IdInvitado" />
+        <input type="submit" value="Desactivar Invitado" class="btn btn-danger" />
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>

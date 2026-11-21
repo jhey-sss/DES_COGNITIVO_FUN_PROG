@@ -15,7 +15,7 @@ public partial class GestionEventosContext : DbContext
     {
     }
 
-    public virtual DbSet<Administrador> Administradors { get; set; } //estos son los controladores espejo de las tablas de la base de datos
+    public virtual DbSet<Administrador> Administradors { get; set; }
 
     public virtual DbSet<Cliente> Clientes { get; set; }
 
@@ -29,8 +29,7 @@ public partial class GestionEventosContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=localhost,1433;Database=GestionEventos;User Id=sa;Password=Admin123*;TrustServerCertificate=True;");
-
+            => optionsBuilder.UseSqlServer("Server=localhost,1433;Database=GestionEventos;User Id=sa;Password=Admin123*;TrustServerCertificate=True;");
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Administrador>(entity =>
@@ -39,8 +38,12 @@ public partial class GestionEventosContext : DbContext
 
             entity.ToTable("Administrador");
 
+            entity.Property(e => e.Activo).HasDefaultValue(true);
             entity.Property(e => e.ContraseñaHash)
                 .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Correo)
+                .HasMaxLength(100)
                 .IsUnicode(false);
             entity.Property(e => e.Usuario)
                 .HasMaxLength(50)
@@ -53,6 +56,7 @@ public partial class GestionEventosContext : DbContext
 
             entity.ToTable("Cliente");
 
+            entity.Property(e => e.Activo).HasDefaultValue(true);
             entity.Property(e => e.Correo)
                 .HasMaxLength(100)
                 .IsUnicode(false);
@@ -74,6 +78,7 @@ public partial class GestionEventosContext : DbContext
 
             entity.ToTable("Estado_Evento");
 
+            entity.Property(e => e.Activo).HasDefaultValue(true);
             entity.Property(e => e.EstadoEvento1)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -86,8 +91,12 @@ public partial class GestionEventosContext : DbContext
 
             entity.ToTable("Evento");
 
+            entity.Property(e => e.Activo).HasDefaultValue(true);
             entity.Property(e => e.CodigoEvento)
                 .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Descripcion)
+                .HasMaxLength(500)
                 .IsUnicode(false);
             entity.Property(e => e.Lugar)
                 .HasMaxLength(250)
@@ -114,6 +123,10 @@ public partial class GestionEventosContext : DbContext
 
             entity.ToTable("Invitado");
 
+            entity.Property(e => e.Activo).HasDefaultValue(true);
+            entity.Property(e => e.Correo)
+                .HasMaxLength(100)
+                .IsUnicode(false);
             entity.Property(e => e.Dni)
                 .HasMaxLength(20)
                 .IsUnicode(false)
@@ -122,6 +135,12 @@ public partial class GestionEventosContext : DbContext
                 .HasMaxLength(150)
                 .IsUnicode(false);
             entity.Property(e => e.NumAcompañantes).HasDefaultValue(0);
+            entity.Property(e => e.RestriccionesAlimentarias)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Telefono)
+                .HasMaxLength(20)
+                .IsUnicode(false);
 
             entity.HasOne(d => d.IdEventoNavigation).WithMany(p => p.Invitados)
                 .HasForeignKey(d => d.IdEvento)
@@ -138,6 +157,11 @@ public partial class GestionEventosContext : DbContext
             entity.HasKey(e => e.IdMesa);
 
             entity.ToTable("Mesa");
+
+            entity.Property(e => e.Activo).HasDefaultValue(true);
+            entity.Property(e => e.NombreMesa)
+                .HasMaxLength(100)
+                .IsUnicode(false);
 
             entity.HasOne(d => d.IdEventoNavigation).WithMany(p => p.Mesas)
                 .HasForeignKey(d => d.IdEvento)
