@@ -30,6 +30,38 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
                 TotalInvitados = await _context.Invitados.CountAsync(i => i.Activo == true),
                 EventosEsteMes = await _context.Eventos.CountAsync(e => e.Activo == true && e.Fecha.Month == hoy.Month && e.Fecha.Year == hoy.Year)
             };
+            // enviar cambios 11,,1,1,1,,1
+            // armamos el tablero de estados, una columna por cada estado de evento
+            // traemos solo los datos necesarios de cada evento activo, junto con el conteo de sus invitados
+            var eventosTablero = await _context.Eventos
+                .Where(e => e.Activo == true)
+                .OrderBy(e => e.Fecha)
+                .Select(e => new EventoTableroViewModel
+                {
+                    IdEvento = e.IdEvento,
+                    IdEstado = e.IdEstado,
+                    CodigoEvento = e.CodigoEvento,
+                    Nombre = e.Nombre,
+                    Fecha = e.Fecha,
+                    Lugar = e.Lugar,
+                    NombreCliente = e.IdClienteNavigation.Nombre,
+                    TotalInvitados = e.Invitados.Count(i => i.Activo == true),
+                    TotalConfirmados = e.Invitados.Count(i => i.Activo == true && i.Confirmado == true)
+                })
+                .ToListAsync();
+
+            var estados = await _context.EstadoEventos.OrderBy(s => s.IdEstado).ToListAsync();
+
+            // mostramos los estados activos, y tambien cualquier estado inactivo que aun tenga eventos, para que ningun evento desaparezca del tablero
+            model.ColumnasEstados = estados
+                .Where(s => s.Activo == true || eventosTablero.Any(e => e.IdEstado == s.IdEstado))
+                .Select(s => new ColumnaEstadoViewModel
+                {
+                    IdEstado = s.IdEstado,
+                    NombreEstado = s.EstadoEvento1,
+                    Eventos = eventosTablero.Where(e => e.IdEstado == s.IdEstado).ToList()
+                })
+                .ToList();
 
             // 3. Enviamos el modelo a la vista
             return View(model);

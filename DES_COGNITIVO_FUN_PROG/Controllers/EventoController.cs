@@ -1,4 +1,5 @@
-﻿using DES_COGNITIVO_FUN_PROG.Models;
+﻿using ClosedXML.Excel;
+using DES_COGNITIVO_FUN_PROG.Models;
 using DES_COGNITIVO_FUN_PROG.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,8 +42,6 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
                 //.ToListAsync();                           // Ejecuta el SQL y trae la lista (EF Core Async)
 
 
-
-
             //validamos que el dato que nos retorna no sea nulo osea que si tenga algun dato y que este sea mayor a 0
             //if (buscar.HasValue && buscar.Value > 0 ){
 
@@ -52,11 +51,11 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
             //}
 
             if (!string.IsNullOrEmpty(buscar))
-            {
+            
                 //buscamos el codigo del evento en la bd como string
-                eventos = eventos.Where(e => e.CodigoEvento.Contains(buscar));
-
-
+            {
+                buscar = buscar.Trim();
+                eventos = eventos.Where(e => e.CodigoEvento.Contains(buscar) || e.Nombre.Contains(buscar));
             }
             ViewData["BusquedaEventos"] = buscar;
 
@@ -65,6 +64,97 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
 
             return View(BuscarEvetos);
         }
+
+
+
+
+
+        //Exportar en exel un reporte de los clientes de los eventos
+        public async Task<IActionResult> ExportarExel(string? buscar)
+        {
+            //aplicamos el filtro del index
+            var consulta = _context.Eventos.Where(a => a.Activo);
+            if (!string.IsNullOrWhiteSpace(buscar))
+            {
+                buscar = buscar.Trim();
+                consulta = consulta.Where(c => c.CodigoEvento.Contains(buscar) || c.Nombre.Contains(buscar));
+            }
+
+            //gaurdamos en un viewdata, el texto buscado para que no se pierda en la vista
+            ViewData["BusquedaActual"] = buscar;
+
+            //enviamos la peticion a la base de datos a traves del metodo asincronico implementado
+            var EventosFiltrados = await consulta.ToListAsync();
+
+
+            //aqui creamos el archivo
+
+            using (var wb = new XLWorkbook())
+            {
+                var worksheet = wb.Worksheets.Add("Invitado");
+                // ls encabezados
+
+                worksheet.Cell(1, 1).Value = "Numero Evento";
+                worksheet.Cell(1, 2).Value = "Estado evento";
+                worksheet.Cell(1, 3).Value = "Nombre";
+                worksheet.Cell(1, 4).Value = "Presupuesto";
+                worksheet.Cell(1, 5).Value = "Fecha";
+                worksheet.Cell(1, 6).Value = "Lugar";
+                worksheet.Cell(1, 7).Value = "CodigoEvento";
+                worksheet.Cell(1, 8).Value = "Descripcion";
+
+
+
+                //definimos el rango a estalizar
+                var headerRow = worksheet.Range("A1:H1");
+                headerRow.Style.Font.Bold = true;
+                headerRow.Style.Fill.BackgroundColor = XLColor.LightGray;
+
+                // llenado de los datos causa
+                int fila = 2; //en la primera fila esta el encabezado entonces desde el segundo se van agregando los datos
+                foreach (var evento in EventosFiltrados)
+                {
+                    worksheet.Cell(fila, 1).Value = evento.IdEvento;
+                    worksheet.Cell(fila, 2).Value = evento.IdEstado;
+                    worksheet.Cell(fila, 3).Value = evento.Nombre;
+                    worksheet.Cell(fila, 4).Value = evento.Presupuesto;
+
+                    var celdaFecha = worksheet.Cell(fila, 5);
+                    celdaFecha.Value = evento.Fecha.ToDateTime(TimeOnly.MinValue);
+                    celdaFecha.Style.DateFormat.Format = "dd/MM/yyyy";
+                    worksheet.Cell(fila, 6).Value = evento.Lugar;
+                    worksheet.Cell(fila, 7).Value = evento.CodigoEvento;
+                    worksheet.Cell(fila, 8).Value = evento.Descripcion;
+
+
+                    fila++;
+
+                }
+                worksheet.Columns().AdjustToContents();
+                //Descarga del archivo 
+                using (var stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    var content = stream.ToArray();
+                    string nombreArchivo = $"Reporte_Eventos_{DateTime.Now:yyyyMMdd_HHmm}.xlsx";
+
+                    return File(
+                        content,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        nombreArchivo
+                    );
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+
 
         [HttpGet]
         public IActionResult Create()

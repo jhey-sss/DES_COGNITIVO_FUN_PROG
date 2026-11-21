@@ -15,7 +15,7 @@ public partial class Invitado
 
     public string Dni { get; set; } = null!;
 
-    public bool? Confirmado { get; set; }
+    public bool Confirmado { get; set; }
 
     public int? NumAcompañantes { get; set; }
 
@@ -27,7 +27,7 @@ public partial class Invitado
 
     public string? RestriccionesAlimentarias { get; set; }
 
-    public bool? Activo { get; set; }
+    public bool Activo { get; set; }
 
     public virtual Evento IdEventoNavigation { get; set; } = null!;
 

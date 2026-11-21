@@ -10,16 +10,17 @@
 
     <div>
         <form asp-controller="Cliente" asp-action="Index">
+           
             <p>
-                DNI: <input type="number" name="Buscar" value="@ViewData["BusquedaActual"]" class="form-text" />
-                <input type="submit" value="buscar"  class="btn btn-sm btn-dark" />
-                <a asp-controller="Cliente" asp-action="Index" class="btn btn-secondary" >Cancelar</a>
+                Buscar: <input type="text" name="buscar" value="@ViewData["BusquedaEventos"]" class="form-text" placeholder="ej. Juan..." />
+                <input type="submit" value="Buscar" class="btn btn-dark" />
+                <a asp-controller="Cliente" asp-action="Index" class="btn btn-secondary">Limpiar</a>
+                <button type="submit" formaction="@Url.Action("ExportarExel", "Evento")" class="btn btn-success">
+                    Descargar Excel
+                </button>
+
             </p>
         </form>
-    <a asp-action="ExportarExel" asp-route-buscar="@ViewData["BusquedaActual"]" class="btn btn-success">
-        Descargar Excel
-    </a>
-
     </div>
 
     <div class="card shadow-sm">

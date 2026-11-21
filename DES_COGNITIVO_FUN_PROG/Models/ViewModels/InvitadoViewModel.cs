@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace DES_COGNITIVO_FUN_PROG.Models.ViewModels 
-{ 
+namespace DES_COGNITIVO_FUN_PROG.Models.ViewModels
+{
 
     // VIEWMODEL PARA EL ADMINISTRADOR (CRUD Completo)
 
@@ -87,5 +87,42 @@ namespace DES_COGNITIVO_FUN_PROG.Models.ViewModels
         public string? RestriccionesAlimentarias { get; set; }
 
         public List<string> CompañerosDeMesa { get; set; } = new List<string>();
+    }
+
+    // VIEWMODELS PARA LA LISTA DE INVITADOS CATEGORIZADA POR EVENTO
+
+    // resumen de un evento para la pantalla principal de invitados (una tarjeta por evento)
+    public class EventoInvitadosResumenViewModel
+    {
+        public int IdEvento { get; set; }
+        public string CodigoEvento { get; set; } = null!;
+        public string Nombre { get; set; } = null!;
+        public DateOnly Fecha { get; set; }
+        public string Lugar { get; set; } = null!;
+        public string NombreEstado { get; set; } = null!;
+        public string NombreCliente { get; set; } = null!;
+        public int TotalInvitados { get; set; }
+        public int TotalConfirmados { get; set; }
+    }
+
+    // datos de la pantalla que muestra unicamente los invitados de un evento
+    public class InvitadosPorEventoViewModel
+    {
+        public int IdEvento { get; set; }
+        public string CodigoEvento { get; set; } = null!;
+        public string Nombre { get; set; } = null!;
+        public DateOnly Fecha { get; set; }
+        public string Lugar { get; set; } = null!;
+        public string NombreEstado { get; set; } = null!;
+        public string NombreCliente { get; set; } = null!;
+
+        // contadores generales del evento (no cambian cuando se usa la barra de busqueda)
+        public int TotalInvitados { get; set; }
+        public int TotalConfirmados { get; set; }
+        public int TotalPendientes { get; set; }
+        public int PersonasConfirmadas { get; set; } // invitados confirmados + sus acompañantes
+
+        public string? Busqueda { get; set; }
+        public List<Invitado> Invitados { get; set; } = new List<Invitado>();
     }
 }

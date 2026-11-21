@@ -23,7 +23,7 @@ public partial class Evento
 
     public string? Descripcion { get; set; }
 
-    public bool? Activo { get; set; }
+    public bool Activo { get; set; }
 
     public virtual Cliente IdClienteNavigation { get; set; } = null!;
 

@@ -7,7 +7,7 @@
     <div class="col-md-6">
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            
+
             <div class="row">
                 <div class="col-md-6 form-group mb-3">
                     <label asp-for="IdEvento" class="control-label"></label>
@@ -67,12 +67,22 @@
 
             <div class="form-group mb-4">
                 <input type="submit" value="Guardar Invitado" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                <!-- si el invitado se registra desde un evento, cancelar vuelve a la lista de ese evento -->
+                @if (Model.IdEvento != 0)
+                {
+                    <a asp-action="PorEvento" asp-route-idEvento="@Model.IdEvento" class="btn btn-secondary">Cancelar</a>
+                }
+                else
+                {
+                    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                }
             </div>
         </form>
     </div>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

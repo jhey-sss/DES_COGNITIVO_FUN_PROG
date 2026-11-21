@@ -22,6 +22,7 @@
     <form asp-action="Delete">
         <input type="hidden" asp-for="IdInvitado" />
         <input type="submit" value="Desactivar Invitado" class="btn btn-danger" />
-        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+        <!-- cancelar vuelve a la lista de invitados del evento -->
+        <a asp-action="PorEvento" asp-route-idEvento="@Model.IdEvento" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>

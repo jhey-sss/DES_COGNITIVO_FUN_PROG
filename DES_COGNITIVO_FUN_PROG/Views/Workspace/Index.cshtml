@@ -1,29 +1,356 @@
-﻿@model List<DES_COGNITIVO_FUN_PROG.Models.Cliente> // aqui confirmamos la clase Cliente mandada por el controlador
+﻿@model DES_COGNITIVO_FUN_PROG.Models.ViewModels.DashboardViewModel
 
+@{
+    ViewData["Title"] = "Workspace";
+}
 
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-secondary fw-bold" style="color: #6c757d;">Resumen de tu Workspace</h2>
+        <span class="text-muted"><i class="bi bi-calendar3"></i> @DateTime.Now.ToString("dd MMMM yyyy")</span>
+    </div>
 
-<h1>Clientes</h1>
+    <!-- TARJETAS DE MÉTRICAS (COLORES PASTEL) -->
+    <div class="row">
+        <!-- Eventos Activos (Soft Blue) -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 rounded-4" style="background-color: #e3f2fd;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-bold mb-1" style="color: #5c8599; font-size: 0.8rem;">Eventos Activos</h6>
+                            <h2 class="mb-0 fw-bold" style="color: #1565c0;">@Model.TotalEventosActivos</h2>
+                        </div>
+                        <div class="p-3 bg-white rounded-circle shadow-sm">
+                            <i class="bi bi-calendar-event fs-4" style="color: #1976d2;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<Table class="table">
+        <!-- Clientes (Soft Purple/Lavender) -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 rounded-4" style="background-color: #f3e5f5;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-bold mb-1" style="color: #8c6b99; font-size: 0.8rem;">Clientes</h6>
+                            <h2 class="mb-0 fw-bold" style="color: #6a1b9a;">@Model.TotalClientesActivos</h2>
+                        </div>
+                        <div class="p-3 bg-white rounded-circle shadow-sm">
+                            <i class="bi bi-people fs-4" style="color: #7b1fa2;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <thead>
+        <!-- Invitados Totales (Soft Blush Pink) -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 rounded-4" style="background-color: #fce4ec;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-bold mb-1" style="color: #a3687c; font-size: 0.8rem;">Invitados</h6>
+                            <h2 class="mb-0 fw-bold" style="color: #c2185b;">@Model.TotalInvitados</h2>
+                        </div>
+                        <div class="p-3 bg-white rounded-circle shadow-sm">
+                            <i class="bi bi-envelope-paper fs-4" style="color: #d81b60;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <tr>
-            <th>Nombre</th>
-        </tr>
+        <!-- Eventos del Mes (Mint Green) -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 rounded-4" style="background-color: #e8f5e9;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-bold mb-1" style="color: #639265; font-size: 0.8rem;">Eventos del Mes</h6>
+                            <h2 class="mb-0 fw-bold" style="color: #2e7d32;">@Model.EventosEsteMes</h2>
+                        </div>
+                        <div class="p-3 bg-white rounded-circle shadow-sm">
+                            <i class="bi bi-calendar-check fs-4" style="color: #388e3c;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        </thead>
-            <tbody> 
-                @foreach (var cliente_simple in Model) //aqui se conecta con las tablas de la base de datos y extrae la información a traves de un bucle
-                    {
-                        <tr>
-                            <td>@Html.DisplayFor(m=>cliente_simple.IdCliente)</td> 
-                            <td>@Html.DisplayFor(m=>cliente_simple.NumeroIdentidad)</td>
-                            <td>@Html.DisplayFor(m=>cliente_simple.Nombre)</td>
-                            <td>@Html.DisplayFor(m=>cliente_simple.Correo)</td>
-                            <td>@Html.DisplayFor(m=>cliente_simple.Telefono)</td>
-                        </tr>
-                    }
-                </tbody>
+    <!-- TABLERO DE ESTADOS DE LOS EVENTOS -->
+    <!-- cada columna es un estado de evento, las tarjetas se pueden arrastrar de una columna a otra para cambiar su estado -->
+    <div class="d-flex justify-content-between align-items-end mb-3 mt-2 flex-wrap">
+        <h4 class="fw-bold mb-0" style="color: #6c757d;">Estado de tus eventos</h4>
+        <small class="text-muted">Arrastra una tarjeta a otra columna, o usa la lista desplegable de la tarjeta, para cambiar el estado del evento.</small>
+    </div>
 
-</Table>
+    <!-- aqui se muestra un mensaje si no se pudo guardar el cambio de estado -->
+    <div id="tablero-mensaje" class="alert alert-danger d-none" role="alert"></div>
+
+    <div id="tablero-eventos" class="mb-4" data-url-cambiar="@Url.Action("CambiarEstado", "Evento")">
+        <!-- token antiforgery, el javascript lo envia en la cabecera al cambiar un estado -->
+        @Html.AntiForgeryToken()
+
+        @if (Model.ColumnasEstados.Any())
+        {
+            // paleta pastel, para que cada columna tenga un color distinto
+            var paleta = new[]
+            {
+                new { Fondo = "#e3f2fd", Texto = "#1565c0" },
+                new { Fondo = "#fff3e0", Texto = "#e65100" },
+                new { Fondo = "#e8f5e9", Texto = "#2e7d32" },
+                new { Fondo = "#f3e5f5", Texto = "#6a1b9a" },
+                new { Fondo = "#fce4ec", Texto = "#c2185b" },
+                new { Fondo = "#eceff1", Texto = "#455a64" }
+            };
+            int indiceColor = 0;
+
+            <div class="tablero-columnas">
+                @foreach (var columna in Model.ColumnasEstados)
+                {
+                    var color = paleta[indiceColor % paleta.Length];
+                    indiceColor++;
+
+                    <div class="tablero-columna shadow-sm">
+                        <div class="tablero-columna-header" style="background-color: @color.Fondo; color: @color.Texto;">
+                            <span class="fw-bold text-uppercase" style="font-size: 0.85rem;">@columna.NombreEstado</span>
+                            <span class="badge rounded-pill bg-white text-dark contador-columna">@columna.Eventos.Count</span>
+                        </div>
+
+                        <!-- cuerpo de la columna, aqui se sueltan las tarjetas -->
+                        <div class="columna-cuerpo" data-id-estado="@columna.IdEstado">
+                            <div class="columna-vacia text-muted text-center small py-4 @(columna.Eventos.Any() ? "d-none" : "")">Sin eventos en este estado</div>
+
+                            @foreach (var evento in columna.Eventos)
+                            {
+                                <div class="tarjeta-evento" draggable="true" data-id-evento="@evento.IdEvento">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <span class="badge bg-light text-secondary border">@evento.CodigoEvento</span>
+                                        <small class="text-muted"><i class="bi bi-calendar-event"></i> @evento.Fecha.ToString("dd/MM/yyyy")</small>
+                                    </div>
+
+                                    <!-- al presionar el nombre del evento vamos a la lista de invitados de ese evento -->
+                                    <a asp-controller="Invitado" asp-action="PorEvento" asp-route-idEvento="@evento.IdEvento" class="fw-bold text-decoration-none d-block mb-1" style="color: #d81b60;">@evento.Nombre</a>
+
+                                    <div class="small text-muted"><i class="bi bi-geo-alt text-danger"></i> @evento.Lugar</div>
+                                    <div class="small text-muted mb-2"><i class="bi bi-person"></i> @evento.NombreCliente</div>
+
+                                    <div class="small mb-2">
+                                        <i class="bi bi-envelope-paper"></i> @evento.TotalConfirmados de @evento.TotalInvitados invitados confirmados
+                                    </div>
+
+                                    <!-- lista desplegable para cambiar el estado sin arrastrar (sirve tambien en celulares) -->
+                                    <select class="form-select form-select-sm selector-estado" aria-label="Cambiar estado del evento">
+                                        @foreach (var opcion in Model.ColumnasEstados)
+                                        {
+                                            <option value="@opcion.IdEstado" selected="@(opcion.IdEstado == columna.IdEstado)">@opcion.NombreEstado</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-light border text-center text-muted">No hay estados de evento registrados.</div>
+        }
+    </div>
+
+    <!-- BANNER DE ACCESO RÁPIDO -->
+    <div class="card shadow-sm border-0 mt-2 rounded-4">
+        <div class="card-body p-5 text-center" style="background-color: #fffafb; border: 2px dashed #f8bbd0; border-radius: 1rem;">
+            <div class="mb-3">
+                <i class="bi bi-stars" style="font-size: 3rem; color: #f48fb1;"></i>
+            </div>
+            <h3 class="fw-bold" style="color: #d81b60;">¡Bienvenido a tu Panel de Planificación!</h3>
+            <p class="text-muted mt-3 mb-4 fs-5">Utiliza el menú lateral para navegar por tu espacio de trabajo y gestionar las bodas y eventos especiales de tus clientes.</p>
+
+            <a asp-controller="Evento" asp-action="Create" class="btn text-white shadow rounded-pill px-4 py-2 me-2" style="background-color: #f48fb1; border: none;">
+                <i class="bi bi-plus-circle me-1"></i> Planificar Nuevo Evento
+            </a>
+            <a asp-controller="Cliente" asp-action="Create" class="btn btn-outline-secondary rounded-pill px-4 py-2">
+                <i class="bi bi-person-plus me-1"></i> Registrar Cliente
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- estilos del tablero de estados -->
+<style>
+    .tablero-columnas {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .tablero-columna {
+        flex: 1 0 280px;
+        max-width: 340px;
+        background-color: #ffffff;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .tablero-columna-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.8rem 1rem;
+    }
+
+    .columna-cuerpo {
+        min-height: 140px;
+        max-height: 520px;
+        overflow-y: auto;
+        padding: 0.75rem;
+        transition: background-color 0.15s ease-in-out;
+    }
+
+    .columna-resaltada {
+        background-color: #fff0f5; /* rosa muy suave cuando se arrastra una tarjeta encima */
+    }
+
+    .tarjeta-evento {
+        background-color: #fffafb;
+        border: 1px solid #f8bbd0;
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        cursor: grab;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .tarjeta-evento.arrastrando {
+            opacity: 0.45;
+        }
+
+        .tarjeta-evento.guardando {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+</style>
+
+@section Scripts {
+    <script>
+        // logica del tablero de estados: arrastrar y soltar, o cambiar con la lista desplegable
+        (function () {
+            const tablero = document.getElementById('tablero-eventos');
+            if (!tablero) return;
+
+            const urlCambiar = tablero.dataset.urlCambiar;
+            const tokenInput = tablero.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+            const mensaje = document.getElementById('tablero-mensaje');
+
+            let tarjetaArrastrada = null;
+
+            function mostrarError(texto) {
+                mensaje.textContent = texto;
+                mensaje.classList.remove('d-none');
+                setTimeout(function () { mensaje.classList.add('d-none'); }, 5000);
+            }
+
+            // actualiza el numero de eventos de cada columna y el aviso de columna vacia
+            function actualizarColumnas() {
+                tablero.querySelectorAll('.tablero-columna').forEach(function (columna) {
+                    const cuerpo = columna.querySelector('.columna-cuerpo');
+                    const total = cuerpo.querySelectorAll('.tarjeta-evento').length;
+                    columna.querySelector('.contador-columna').textContent = total;
+                    cuerpo.querySelector('.columna-vacia').classList.toggle('d-none', total > 0);
+                });
+            }
+
+            // mueve la tarjeta a la columna nueva, guarda el cambio en el servidor y si falla la regresa a su lugar
+            async function moverTarjeta(tarjeta, cuerpoDestino) {
+                const cuerpoOrigen = tarjeta.closest('.columna-cuerpo');
+                if (cuerpoOrigen === cuerpoDestino) return;
+
+                const selector = tarjeta.querySelector('.selector-estado');
+                const estadoAnterior = cuerpoOrigen.dataset.idEstado;
+
+                // movemos la tarjeta de inmediato para que se sienta rapido
+                cuerpoDestino.appendChild(tarjeta);
+                selector.value = cuerpoDestino.dataset.idEstado;
+                tarjeta.classList.add('guardando');
+                actualizarColumnas();
+
+                try {
+                    const cuerpoPeticion = new URLSearchParams({
+                        idEvento: tarjeta.dataset.idEvento,
+                        idEstado: cuerpoDestino.dataset.idEstado
+                    });
+
+                    const respuesta = await fetch(urlCambiar, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': token
+                        },
+                        body: cuerpoPeticion
+                    });
+
+                    // si la sesion vencio el servidor redirige al login, eso tambien lo tratamos como error
+                    if (!respuesta.ok || respuesta.redirected) throw new Error('No se pudo guardar');
+                    const datos = await respuesta.json();
+                    if (!datos.ok) throw new Error(datos.mensaje || 'No se pudo guardar');
+                } catch (error) {
+                    // regresamos la tarjeta a su columna anterior
+                    cuerpoOrigen.appendChild(tarjeta);
+                    selector.value = estadoAnterior;
+                    actualizarColumnas();
+                    mostrarError('No se pudo cambiar el estado del evento. Recarga la pagina e intentalo de nuevo.');
+                } finally {
+                    tarjeta.classList.remove('guardando');
+                }
+            }
+
+            // eventos de arrastrar y soltar de cada tarjeta
+            tablero.querySelectorAll('.tarjeta-evento').forEach(function (tarjeta) {
+                tarjeta.addEventListener('dragstart', function (e) {
+                    tarjetaArrastrada = tarjeta;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', tarjeta.dataset.idEvento);
+                    tarjeta.classList.add('arrastrando');
+                });
+                tarjeta.addEventListener('dragend', function () {
+                    tarjeta.classList.remove('arrastrando');
+                    tarjetaArrastrada = null;
+                    tablero.querySelectorAll('.columna-resaltada').forEach(function (c) { c.classList.remove('columna-resaltada'); });
+                });
+            });
+
+            // eventos de cada columna donde se puede soltar una tarjeta
+            tablero.querySelectorAll('.columna-cuerpo').forEach(function (cuerpo) {
+                cuerpo.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                    cuerpo.classList.add('columna-resaltada');
+                });
+                cuerpo.addEventListener('dragleave', function (e) {
+                    if (!cuerpo.contains(e.relatedTarget)) cuerpo.classList.remove('columna-resaltada');
+                });
+                cuerpo.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    cuerpo.classList.remove('columna-resaltada');
+                    if (tarjetaArrastrada) moverTarjeta(tarjetaArrastrada, cuerpo);
+                });
+            });
+
+            // cambio de estado con la lista desplegable de cada tarjeta
+            tablero.querySelectorAll('.selector-estado').forEach(function (selector) {
+                selector.addEventListener('change', function () {
+                    const cuerpoDestino = tablero.querySelector('.columna-cuerpo[data-id-estado="' + selector.value + '"]');
+                    if (cuerpoDestino) moverTarjeta(selector.closest('.tarjeta-evento'), cuerpoDestino);
+                });
+            });
+        })();
+    </script>
+}

@@ -1,53 +1,64 @@
-﻿@model List<DES_COGNITIVO_FUN_PROG.Models.Invitado>
+﻿@model List<DES_COGNITIVO_FUN_PROG.Models.ViewModels.EventoInvitadosResumenViewModel>
 
-<h1>Lista de Invitados</h1>
-<div>
-    <p>
-        <a asp-action="Create" class="btn btn-success">Registrar Nuevo Invitado</a>
-    </p>
-</div>
+@{
+    ViewData["Title"] = "Invitados por evento";
+}
+
+<h1>Invitados por Evento</h1>
+<p class="text-muted">Selecciona un evento para ver, administrar y exportar la lista de invitados de ese evento.</p>
 
 <div>
-    <form asp-controller="Invitado" asp-action="Index">
+    <form asp-controller="Invitado" asp-action="Index" method="get">
         <p>
-            <input type="number" name="Buscar" value="@ViewData["BusquedaInvitado"]" class="form-text" />
-            <input type="submit" value="buscar" class="btn btn-primary btn-dark" />
-            <a asp-controller="Invitado" asp-action="Index" class="btn btn-secondary">Cancelar</a>
-
+            Buscar evento: <input type="text" name="buscar" value="@ViewData["BusquedaInvitado"]" class="form-text" placeholder="Código o nombre del evento..." />
+            <input type="submit" value="Buscar" class="btn btn-dark" />
+            <a asp-controller="Invitado" asp-action="Index" class="btn btn-secondary">Limpiar</a>
+            <!-- si se quiere registrar un invitado sin entrar antes a un evento, el evento se elige en el formulario -->
+            <a asp-action="Create" class="btn btn-success">Registrar Nuevo Invitado</a>
         </p>
     </form>
-
 </div>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Evento</th>
-            <th>Mesa</th>
-            <th>Nombres</th>
-            <th>DNI</th>
-            <th>Confirmado</th>
-            <th>Acompañantes</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
+
+@if (Model.Any())
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+        @foreach (var evento in Model)
         {
-            <tr>
-                <td>@item.IdEventoNavigation?.Nombre</td>
-                <td>@(item.IdMesaNavigation?.NumeroMesa.ToString() ?? "Sin mesa")</td>
-                <td>@item.Nombres</td>
-                <td>@item.Dni</td>
-                <td>
-                    @if (item.Confirmado == true) { <span class="badge bg-success">Sí</span> }
-                    else { <span class="badge bg-secondary">No / Pendiente</span> }
-                </td>
-                <td>@item.NumAcompañantes</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.IdInvitado" class="btn btn-primary btn-sm">Editar</a>
-                    <a asp-action="Delete" asp-route-id="@item.IdInvitado" class="btn btn-danger btn-sm">Borrar</a>
-                </td>
-            </tr>
+            // porcentaje de invitados que ya confirmaron, para la barra de progreso
+            int porcentaje = evento.TotalInvitados == 0 ? 0 : (int)Math.Round(evento.TotalConfirmados * 100.0 / evento.TotalInvitados);
+
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 rounded-4" style="background-color: #fffafb; border: 1px solid #f8bbd0 !important;">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-light text-secondary border">@evento.CodigoEvento</span>
+                            <span class="badge rounded-pill" style="background-color: #f8bbd0; color: #880e4f;">@evento.NombreEstado</span>
+                        </div>
+
+                        <h5 class="fw-bold mb-2" style="color: #d81b60;">@evento.Nombre</h5>
+                        <div class="small text-muted"><i class="bi bi-calendar-event"></i> @evento.Fecha.ToString("dd/MM/yyyy")</div>
+                        <div class="small text-muted"><i class="bi bi-geo-alt text-danger"></i> @evento.Lugar</div>
+                        <div class="small text-muted mb-3"><i class="bi bi-person"></i> @evento.NombreCliente</div>
+
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>@evento.TotalConfirmados de @evento.TotalInvitados confirmados</span>
+                            <span>@porcentaje%</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @porcentaje%;" aria-valuenow="@porcentaje" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <!-- al presionar el evento nos lleva a la lista de invitados unicamente de ese evento -->
+                        <a asp-action="PorEvento" asp-route-idEvento="@evento.IdEvento" class="btn text-white w-100 rounded-pill stretched-link" style="background-color: #f48fb1;">
+                            <i class="bi bi-people"></i> Ver invitados
+                        </a>
+                    </div>
+                </div>
+            </div>
         }
-    </tbody>
-</table>
+    </div>
+}
+else
+{
+    <div class="alert alert-light border text-center text-muted">No hay eventos registrados o activos en este momento.</div>
+}

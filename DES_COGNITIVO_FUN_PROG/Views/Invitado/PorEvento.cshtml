@@ -1,0 +1,169 @@
+﻿@model DES_COGNITIVO_FUN_PROG.Models.ViewModels.InvitadosPorEventoViewModel
+
+@{
+    ViewData["Title"] = "Invitados del evento";
+
+    // enlace de la vista del invitado (Invitado/Acceso/idEvento), la misma que usa el cliente para ingresar su dni y confirmar
+    var urlFormularioCliente = Url.Action("Acceso", "Invitado", new { idEvento = Model.IdEvento });
+    var urlCompletaCliente = Url.Action("Acceso", "Invitado", new { idEvento = Model.IdEvento }, Context.Request.Scheme);
+}
+
+<div class="mb-3">
+    <a asp-action="Index" class="text-decoration-none"><i class="bi bi-arrow-left"></i> Volver a la lista de eventos</a>
+</div>
+
+<!-- ENCABEZADO DEL EVENTO -->
+<div class="d-flex justify-content-between align-items-start flex-wrap mb-4">
+    <div>
+        <h2 class="fw-bold mb-1" style="color: #d81b60;">@Model.Nombre</h2>
+        <div class="text-muted">
+            <span class="badge bg-light text-secondary border">@Model.CodigoEvento</span>
+            <span class="badge rounded-pill" style="background-color: #f8bbd0; color: #880e4f;">@Model.NombreEstado</span>
+            &nbsp;<i class="bi bi-calendar-event"></i> @Model.Fecha.ToString("dd/MM/yyyy")
+            &nbsp;<i class="bi bi-geo-alt text-danger"></i> @Model.Lugar
+            &nbsp;<i class="bi bi-person"></i> @Model.NombreCliente
+        </div>
+    </div>
+</div>
+
+<!-- TARJETAS DE RESUMEN DEL EVENTO -->
+<div class="row mb-4">
+    <div class="col-6 col-md-3 mb-3">
+        <div class="card border-0 shadow-sm rounded-4" style="background-color: #e3f2fd;">
+            <div class="card-body">
+                <h6 class="text-uppercase fw-bold mb-1" style="color: #5c8599; font-size: 0.75rem;">Invitados</h6>
+                <h3 class="mb-0 fw-bold" style="color: #1565c0;">@Model.TotalInvitados</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 mb-3">
+        <div class="card border-0 shadow-sm rounded-4" style="background-color: #e8f5e9;">
+            <div class="card-body">
+                <h6 class="text-uppercase fw-bold mb-1" style="color: #639265; font-size: 0.75rem;">Confirmados</h6>
+                <h3 class="mb-0 fw-bold" style="color: #2e7d32;">@Model.TotalConfirmados</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 mb-3">
+        <div class="card border-0 shadow-sm rounded-4" style="background-color: #fff3e0;">
+            <div class="card-body">
+                <h6 class="text-uppercase fw-bold mb-1" style="color: #b0793a; font-size: 0.75rem;">Pendientes</h6>
+                <h3 class="mb-0 fw-bold" style="color: #e65100;">@Model.TotalPendientes</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 mb-3">
+        <div class="card border-0 shadow-sm rounded-4" style="background-color: #fce4ec;">
+            <div class="card-body">
+                <h6 class="text-uppercase fw-bold mb-1" style="color: #a3687c; font-size: 0.75rem;">Personas confirmadas</h6>
+                <h3 class="mb-0 fw-bold" style="color: #c2185b;">@Model.PersonasConfirmadas</h3>
+                <small class="text-muted">con acompañantes</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ACCIONES: registrar invitado y vista del cliente -->
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a asp-action="Create" asp-route-idEvento="@Model.IdEvento" class="btn btn-success">Registrar Nuevo Invitado</a>
+
+    <!-- abre en otra pestaña la ventana donde el invitado ingresa su dni y confirma su asistencia -->
+    <a href="@urlFormularioCliente" target="_blank" rel="noopener" class="btn btn-outline-primary">
+        <i class="bi bi-box-arrow-up-right"></i> Ver formulario del invitado
+    </a>
+    <!-- copia el enlace completo para enviarselo a los invitados -->
+    <button type="button" id="btnCopiarEnlace" class="btn btn-outline-secondary" data-url="@urlCompletaCliente">
+        <i class="bi bi-clipboard"></i> Copiar enlace para invitados
+    </button>
+</div>
+
+<!-- BUSQUEDA Y EXPORTACION (el excel respeta la busqueda aplicada) -->
+<div>
+    <form asp-controller="Invitado" asp-action="PorEvento" method="get">
+        <input type="hidden" name="idEvento" value="@Model.IdEvento" />
+        <p>
+            Buscar: <input type="text" name="buscar" value="@Model.Busqueda" class="form-text" placeholder="DNI o nombre..." />
+            <input type="submit" value="Buscar" class="btn btn-dark" />
+            <a asp-controller="Invitado" asp-action="PorEvento" asp-route-idEvento="@Model.IdEvento" class="btn btn-secondary">Limpiar</a>
+            <button type="submit" formaction="@Url.Action("ExportarExelPorEvento", "Invitado")" class="btn btn-success">
+                Descargar Excel
+            </button>
+        </p>
+    </form>
+</div>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Mesa</th>
+            <th>Nombres</th>
+            <th>DNI</th>
+            <th>Contacto</th>
+            <th>Confirmado</th>
+            <th>Acompañantes</th>
+            <th>Restricciones</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Invitados.Any())
+        {
+            @foreach (var item in Model.Invitados)
+            {
+                <tr>
+                    <td>@(item.IdMesaNavigation?.NumeroMesa.ToString() ?? "Sin mesa")</td>
+                    <td>@item.Nombres</td>
+                    <td>@item.Dni</td>
+                    <td>
+                        <div>@item.Correo</div>
+                        <small class="text-muted">@item.Telefono</small>
+                    </td>
+                    <td>
+                        @if (item.Confirmado == true)
+                        {
+                            <span class="badge bg-success">Sí</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge bg-secondary">No / Pendiente</span>
+                        }
+                    </td>
+                    <td>@item.NumAcompañantes</td>
+                    <td>@item.RestriccionesAlimentarias</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.IdInvitado" class="btn btn-primary btn-sm">Editar</a>
+                        <a asp-action="Delete" asp-route-id="@item.IdInvitado" class="btn btn-danger btn-sm">Borrar</a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="8" class="text-center p-4 text-muted">
+                    No hay invitados para mostrar en este evento.
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        // copia al portapapeles el enlace que usan los invitados para confirmar su asistencia
+        document.getElementById('btnCopiarEnlace').addEventListener('click', async function () {
+            const boton = this;
+            const url = boton.dataset.url;
+            const textoOriginal = boton.innerHTML;
+            try {
+                await navigator.clipboard.writeText(url);
+                boton.innerHTML = '<i class="bi bi-check2"></i> Enlace copiado';
+                setTimeout(function () { boton.innerHTML = textoOriginal; }, 2500);
+            } catch (error) {
+                // si el navegador no permite copiar automaticamente, mostramos el enlace para copiarlo a mano
+                window.prompt('Copia este enlace:', url);
+            }
+        });
+    </script>
+}
