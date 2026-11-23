@@ -8,7 +8,11 @@
         </div>
         <div class="card-body">
             <form asp-action="Edit">
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                @if (TempData["ErrorEdicion"] != null)
+                {
+                    <div class="alert alert-warning" role="alert">@TempData["ErrorEdicion"]</div>
+                }
+                <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
                 <input type="hidden" asp-for="IdEvento"/>
 
                 <div class="row">
@@ -34,7 +38,7 @@
                     
                     <div class="col-md-6 mb-3">
                         <label asp-for="CodigoEvento" class="form-label fw-bold"></label>
-                        <input asp-for="CodigoEvento" class="form-control" />
+                        <input asp-for="CodigoEvento" class="form-control" readonly />
                         <span asp-validation-for="CodigoEvento" class="text-danger small"></span>
                     </div>
                 </div>
@@ -49,7 +53,7 @@
                     <div class="col-md-4 mb-3">
                         <label asp-for="Presupuesto" class="form-label fw-bold"></label>
                         <div class="input-group">
-                            <span class="input-group-text">\$</span>
+                            <span class="input-group-text">$</span>
                             <input asp-for="Presupuesto" class="form-control" type="number" step="0.01" />
                         </div>
                         <span asp-validation-for="Presupuesto" class="text-danger small"></span>
@@ -61,6 +65,17 @@
                         <span asp-validation-for="Lugar" class="text-danger small"></span>
                     </div>
                 </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label asp-for="Descripcion" class="form-label fw-bold"></label>
+                        <textarea asp-for="Descripcion" class="form-control" rows="2" maxlength="500"></textarea>
+                        <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- MESAS DEL EVENTO: bloques editables con sus invitados, agregar mesas y cambiar invitados de mesa -->
+                <partial name="_EventoMesas" model="Model" />
 
                 <div class="d-flex gap-2 mt-2">
                     <button type="submit" class="btn btn-primary">

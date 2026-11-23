@@ -1,4 +1,5 @@
 ﻿using ClosedXML.Excel;
+using DES_COGNITIVO_FUN_PROG.Helpers;
 using DES_COGNITIVO_FUN_PROG.Models;
 using DES_COGNITIVO_FUN_PROG.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -304,12 +305,50 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
             }
         }
 
+        // descarga la plantilla de excel con las columnas que acepta la importacion de invitados
+        public IActionResult DescargarPlantilla()
+        {
+            var contenido = ImportadorInvitadosExcel.GenerarPlantilla();
+            return File(
+                contenido,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "Plantilla_Invitados.xlsx"
+            );
+        }
+
+        // POST: Invitado/ImportarExcel
+        // importa a un evento los invitados que vienen en un archivo de excel (se usa desde la lista de invitados del evento)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ImportarExcel(int idEvento, IFormFile? archivoExcel)
+        {
+            // el evento tiene que existir y estar activo (borrado logico)
+            var evento = await _context.Eventos.FirstOrDefaultAsync(e => e.IdEvento == idEvento && e.Activo == true);
+            if (evento == null) return NotFound();
+
+            // validamos el archivo (extension y tamaño) antes de leerlo
+            var errorArchivo = ImportadorInvitadosExcel.ValidarArchivo(archivoExcel);
+            if (errorArchivo != null)
+            {
+                TempData["ImportacionResumen"] = errorArchivo;
+                TempData["ImportacionTipo"] = "danger";
+                return RedirectToAction(nameof(PorEvento), new { idEvento });
+            }
+
+            var resultado = await ImportadorInvitadosExcel.ImportarAsync(_context, idEvento, archivoExcel!);
+
+            // guardamos el resultado para mostrarlo en la lista del evento
+            resultado.GuardarEn(TempData);
+
+            return RedirectToAction(nameof(PorEvento), new { idEvento });
+        }
+
         // GET: Invitado/Create
         // si se llega desde la lista de un evento (Invitado/Create?idEvento=1) el evento ya viene seleccionado y solo se muestran las mesas de ese evento
         public IActionResult Create(int? idEvento)
         {
             ViewData["IdEvento"] = new SelectList(_context.Eventos.Where(e => e.Activo == true), "IdEvento", "Nombre", idEvento);
-            ViewData["IdMesa"] = new SelectList(_context.Mesas.Where(m => m.Activo == true && (idEvento == null || m.IdEvento == idEvento)), "IdMesa", "NumeroMesa");
+            ViewData["IdMesa"] = ConstruirListaMesas(idEvento, null);
             var model = new InvitadoAdminViewModel();
             if (idEvento != null) model.IdEvento = idEvento.Value;
             return View(model);
@@ -356,7 +395,7 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
             }
 
             ViewData["IdEvento"] = new SelectList(_context.Eventos.Where(e => e.Activo == true), "IdEvento", "Nombre", model.IdEvento);
-            ViewData["IdMesa"] = new SelectList(_context.Mesas.Where(m => m.Activo == true && m.IdEvento == model.IdEvento), "IdMesa", "NumeroMesa", model.IdMesa);
+            ViewData["IdMesa"] = ConstruirListaMesas(model.IdEvento, model.IdMesa);
             return View(model);
         }
 
@@ -383,7 +422,7 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
             };
 
             ViewData["IdEvento"] = new SelectList(_context.Eventos.Where(e => e.Activo == true), "IdEvento", "Nombre", model.IdEvento);
-            ViewData["IdMesa"] = new SelectList(_context.Mesas.Where(m => m.Activo == true && m.IdEvento == model.IdEvento), "IdMesa", "NumeroMesa", model.IdMesa);
+            ViewData["IdMesa"] = ConstruirListaMesas(model.IdEvento, model.IdMesa);
             return View(model);
         }
 
@@ -442,7 +481,7 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
             }
 
             ViewData["IdEvento"] = new SelectList(_context.Eventos.Where(e => e.Activo == true), "IdEvento", "Nombre", model.IdEvento);
-            ViewData["IdMesa"] = new SelectList(_context.Mesas.Where(m => m.Activo == true && m.IdEvento == model.IdEvento), "IdMesa", "NumeroMesa", model.IdMesa);
+            ViewData["IdMesa"] = ConstruirListaMesas(model.IdEvento, model.IdMesa);
             return View(model);
         }
 
@@ -495,6 +534,49 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
                 else throw;
             }
             return RedirectToAction(nameof(PorEvento), new { idEvento = idEventoInvitado });
+        }
+
+
+        //---- SE arreglea el problema de la mesa que n o aparecen y ahora se asignan y si no hay ninguna, se agrega automaticamente en el helper de umportar por invitado
+        // arma la lista de mesas de un evento para los desplegables, mostrando cuantos lugares tiene ocupados cada una
+        // cada invitado ocupa un lugar, mas los lugares de sus acompañantes
+        private List<SelectListItem> ConstruirListaMesas(int? idEvento, int? idMesaSeleccionada)
+        {
+            // sin evento seleccionado no hay mesas que mostrar, cada evento tiene sus propias mesas
+            if (idEvento == null || idEvento == 0) return new List<SelectListItem>();
+
+            var mesas = _context.Mesas
+                .Where(m => m.Activo == true && m.IdEvento == idEvento)
+                .OrderBy(m => m.NumeroMesa)
+                .Select(m => new
+                {
+                    m.IdMesa,
+                    m.NumeroMesa,
+                    m.NombreMesa,
+                    m.Capacidad,
+                    Ocupados = m.Invitados.Where(i => i.Activo == true).Sum(i => 1 + (i.NumAcompañantes ?? 0))
+                })
+                .ToList();
+
+            return mesas.Select(m => new SelectListItem
+            {
+                Value = m.IdMesa.ToString(),
+                Text = $"Mesa {m.NumeroMesa}"
+                       + (string.IsNullOrWhiteSpace(m.NombreMesa) ? "" : $" - {m.NombreMesa}")
+                       + $" ({m.Ocupados}/{m.Capacidad})",
+                Selected = m.IdMesa == idMesaSeleccionada
+            }).ToList();
+        }
+
+        // GET: Invitado/MesasPorEvento?idEvento=1
+        // devuelve en json las mesas de un evento, el formulario de invitado lo usa para recargar el desplegable de mesas al cambiar de evento
+        [HttpGet]
+        public IActionResult MesasPorEvento(int idEvento, int? idMesaActual)
+        {
+            var mesas = ConstruirListaMesas(idEvento, idMesaActual)
+                .Select(m => new { value = m.Value, text = m.Text });
+
+            return Json(mesas);
         }
 
         private bool InvitadoExists(int id)

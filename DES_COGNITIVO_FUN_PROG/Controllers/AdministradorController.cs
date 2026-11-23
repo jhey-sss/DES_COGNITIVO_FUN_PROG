@@ -13,7 +13,7 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
     public class AdministradorController : Controller
     {
         
-        private readonly GestionEventosContext _Context;
+        private readonly GestionEventosContext _Context; // es una funcion interna, variable privada
         
         public AdministradorController(GestionEventosContext context)
         {

@@ -1,0 +1,162 @@
+﻿@using System.Globalization
+@model DES_COGNITIVO_FUN_PROG.Models.ViewModels.ResumenMesaViewModel
+
+@{
+    // id del evento, lo envia la vista Index por ViewData
+    var idEvento = ViewData["IdEvento"];
+    bool esSinMesa = Model.IdMesa == 0;
+
+    // armamos la lista de asientos: un asiento por invitado, uno por cada acompañante y luego los lugares libres
+    var asientos = new List<(string Clase, string Titulo)>();
+    foreach (var inv in Model.Invitados)
+    {
+        string estado = inv.Confirmado ? "seat-conf" : "seat-pend";
+        asientos.Add((estado, inv.Nombres + (inv.Confirmado ? " (confirmado)" : " (pendiente)")));
+        for (int a = 0; a < inv.NumAcompañantes; a++)
+        {
+            asientos.Add((estado + " seat-acomp", "Acompañante de " + inv.Nombres));
+        }
+    }
+    int libres = Math.Max(0, Model.Capacidad - asientos.Count);
+    for (int l = 0; l < libres; l++)
+    {
+        asientos.Add(("seat-free", "Lugar libre"));
+    }
+    // los asientos que pasan de la capacidad se marcan en rojo
+    for (int k = Model.Capacidad; k < asientos.Count && !esSinMesa; k++)
+    {
+        asientos[k] = (asientos[k].Clase + " seat-over", asientos[k].Titulo);
+    }
+
+    // para mesas muy grandes solo dibujamos los primeros asientos
+    const int maxVisibles = 40;
+    int visibles = Math.Min(asientos.Count, maxVisibles);
+    string tamañoAsiento = visibles > 28 ? "seats-xs" : visibles > 16 ? "seats-sm" : "";
+
+    // color del indicador de ocupacion
+    string colorBarra = Model.Sobrecupo > 0 ? "bg-danger" : Model.PorcentajeOcupacion >= 100 ? "bg-success" : "bg-warning";
+
+    // texto que usa el buscador de la vista para filtrar las mesas
+    string textoBusqueda = (Model.Titulo + " " + string.Join(" ", Model.Invitados.Select(i => i.Nombres + " " + i.Dni))).ToLowerInvariant();
+}
+
+<div class="col-12 col-md-6 col-xl-4 mesa-col" data-busqueda="@textoBusqueda">
+    <div class="card border-0 shadow-sm rounded-4 h-100 mesa-card @(esSinMesa ? "mesa-sin" : "")">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h5 class="fw-bold mb-0" style="color: #d81b60;">@Model.Titulo</h5>
+                    @if (esSinMesa)
+                    {
+                        <small class="text-muted">Invitados que aún no tienen mesa</small>
+                    }
+                    else
+                    {
+                        <small class="text-muted">Capacidad: @Model.Capacidad lugares</small>
+                    }
+                </div>
+                @if (!esSinMesa)
+                {
+                    @if (Model.Sobrecupo > 0)
+                    {
+                        <span class="badge rounded-pill bg-danger">Sobrecupo +@Model.Sobrecupo</span>
+                    }
+                    else if (Model.LugaresLibres == 0)
+                    {
+                        <span class="badge rounded-pill bg-success">Completa</span>
+                    }
+                    else
+                    {
+                        <span class="badge rounded-pill bg-light text-dark border">@Model.LugaresLibres libres</span>
+                    }
+                }
+            </div>
+
+            <!-- dibujo de la mesa: un circulo con los asientos alrededor -->
+            @if (!esSinMesa)
+            {
+                <div class="mesa-redonda @tamañoAsiento">
+                    <div class="mesa-centro"><span>@Model.NumeroMesa</span></div>
+                    @for (int i = 0; i < visibles; i++)
+                    {
+                        double angulo = (2 * Math.PI * i / visibles) - (Math.PI / 2);
+                        string izquierda = (50 + 44 * Math.Cos(angulo)).ToString("0.##", CultureInfo.InvariantCulture);
+                        string arriba = (50 + 44 * Math.Sin(angulo)).ToString("0.##", CultureInfo.InvariantCulture);
+                        <span class="seat @asientos[i].Clase" style="left:@(izquierda)%; top:@(arriba)%;" title="@asientos[i].Titulo"></span>
+                    }
+                </div>
+                @if (asientos.Count > maxVisibles)
+                {
+                    <div class="text-center small text-muted mb-1">Mostrando @maxVisibles de @asientos.Count lugares</div>
+                }
+            }
+
+            <!-- barra de ocupacion -->
+            @if (!esSinMesa)
+            {
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-muted">Ocupación</span>
+                    <span class="fw-bold">@Model.LugaresOcupados / @Model.Capacidad</span>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar @colorBarra" role="progressbar" style="width: @(Model.PorcentajeOcupacion)%;"></div>
+                </div>
+            }
+
+            <div class="d-flex gap-2 small mb-3 flex-wrap">
+                <span class="badge bg-success-subtle text-success-emphasis border"><i class="bi bi-check2-circle"></i> @Model.Confirmados confirmados</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis border"><i class="bi bi-hourglass-split"></i> @Model.Pendientes pendientes</span>
+                <span class="badge bg-light text-dark border"><i class="bi bi-people"></i> @Model.Invitados.Count invitados</span>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="collapse" data-bs-target="#lista-mesa-@Model.IdMesa" aria-expanded="false" aria-controls="lista-mesa-@Model.IdMesa">
+                    <i class="bi bi-list-ul"></i> Ver lista
+                </button>
+                <a asp-controller="EventoResumen" asp-action="ExportarMesa" asp-route-idEvento="@idEvento" asp-route-idMesa="@Model.IdMesa" class="btn btn-sm btn-success rounded-pill">
+                    <i class="bi bi-file-earmark-excel"></i> Excel
+                </a>
+            </div>
+
+            <!-- lista de invitados de la mesa -->
+            <div class="collapse mt-3" id="lista-mesa-@Model.IdMesa">
+                @if (Model.Invitados.Any())
+                {
+                    <ul class="list-group list-group-flush small">
+                        @foreach (var inv in Model.Invitados)
+                        {
+                            <li class="list-group-item px-0 d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-semibold">@inv.Nombres</div>
+                                    <div class="text-muted">
+                                        <span>DNI @inv.Dni</span>
+                                        @if (inv.NumAcompañantes > 0)
+                                        {
+                                            <span> · +@inv.NumAcompañantes acomp.</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(inv.RestriccionesAlimentarias))
+                                    {
+                                        <div class="text-danger"><i class="bi bi-exclamation-circle"></i> @inv.RestriccionesAlimentarias</div>
+                                    }
+                                </div>
+                                @if (inv.Confirmado)
+                                {
+                                    <span class="badge bg-success">Sí</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Pendiente</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="text-center text-muted small py-2">Sin invitados asignados</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

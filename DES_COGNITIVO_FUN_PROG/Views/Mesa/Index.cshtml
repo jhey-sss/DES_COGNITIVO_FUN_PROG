@@ -6,22 +6,57 @@
 
 <h1>Mesas</h1>
 
-<table class="table">
+<!-- filtro por evento y boton para crear mesas (antes la vista no tenia ningun enlace para crear, editar o eliminar) -->
+<div>
+    <form asp-action="Index" method="get">
+        <p>
+            Evento: <select name="idEvento" asp-items="ViewBag.IdEvento" class="form-select d-inline-block w-auto">
+                <option value="">-- Todos los eventos --</option>
+            </select>
+            <input type="submit" value="Filtrar" class="btn btn-dark" />
+            <a asp-action="Index" class="btn btn-secondary">Limpiar</a>
+            <a asp-action="Create" asp-route-idEvento="@ViewData["IdEventoFiltro"]" class="btn btn-success">Crear Mesa</a>
+        </p>
+    </form>
+</div>
+
+<table class="table table-striped align-middle">
     <thead>
         <tr>
-            <th>IdMesa</th>
-            <th>IdEvento</th>
-            <th>NumeroMesa</th>
+            <th>Evento</th>
+            <th>Número de mesa</th>
+            <th>Nombre</th>
             <th>Capacidad</th>
+            <th>Lugares ocupados</th>
+            <th>Acciones</th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
+@if (Model.Any())
+{
+    foreach (var item in Model)
+    {
+        // cada invitado ocupa un lugar, mas los lugares de sus acompañantes
+        int ocupados = item.Invitados.Where(i => i.Activo).Sum(i => 1 + (i.NumAcompañantes ?? 0));
+        string colorOcupacion = ocupados > item.Capacidad ? "bg-danger" : (ocupados == item.Capacidad ? "bg-success" : "bg-secondary");
+
         <tr>
-            <td>@item.IdMesa</td>
-            <td>@item.IdEvento</td>
+            <td>@item.IdEventoNavigation.Nombre</td>
             <td>@item.NumeroMesa</td>
+            <td>@item.NombreMesa</td>
             <td>@item.Capacidad</td>
+            <td><span class="badge @colorOcupacion">@ocupados / @item.Capacidad</span></td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.IdMesa" class="btn btn-primary btn-sm">Editar</a>
+                <a asp-action="Delete" asp-route-id="@item.IdMesa" class="btn btn-danger btn-sm">Eliminar</a>
+            </td>
+        </tr>
+    }
+}
+else
+{
+        <tr>
+            <td colspan="6" class="text-center p-4 text-muted">No hay mesas para mostrar.</td>
         </tr>
 }
     </tbody>

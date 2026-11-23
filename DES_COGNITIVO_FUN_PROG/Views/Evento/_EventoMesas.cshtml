@@ -1,0 +1,408 @@
+﻿@using DES_COGNITIVO_FUN_PROG.Models.ViewModels
+@model EventoViewModel
+
+@{
+    // en Create el evento aun no existe (IdEvento = 0), en Edit ya tiene invitados que se pueden cambiar de mesa
+    bool esEdicion = Model.IdEvento != 0;
+
+    // los bloques se dibujan desde JavaScript a partir de estos datos, asi el mismo codigo sirve para crear, editar y volver a mostrar el formulario si hubo errores
+    var datos = new
+    {
+        esEdicion = esEdicion,
+        mesas = Model.Mesas.Select(m => new
+        {
+            idMesa = m.IdMesa,
+            clave = m.Clave,
+            numero = m.NumeroMesa,
+            nombre = m.NombreMesa,
+            capacidad = m.Capacidad,
+            eliminar = m.Eliminar
+        }),
+        invitados = Model.Invitados.Select(i => new
+        {
+            idInvitado = i.IdInvitado,
+            nombres = i.Nombres,
+            dni = i.Dni,
+            confirmado = i.Confirmado,
+            acompanantes = i.Acompanantes,
+            mesaClave = i.MesaClave ?? ""
+        })
+    };
+}
+
+<div class="card border-0 mb-4" style="background-color: #f8fbff; border: 1px solid #bbdefb !important;">
+    <div class="card-body">
+        <h5 class="fw-bold" style="color: #1565c0;"><i class="bi bi-grid-3x3-gap"></i> Mesas del evento</h5>
+        <p class="text-muted small mb-3">
+            @if (esEdicion)
+            {
+                <span>Edita cada bloque (número, nombre y capacidad), agrega mesas nuevas o cambia de mesa a los invitados con el desplegable de cada uno. Los cambios se guardan al presionar "Actualizar Evento".</span>
+            }
+            else
+            {
+                <span>Indica cuántas mesas habrá y cuántos invitados caben en cada una, o agrégalas una por una. Después puedes ajustar cada bloque. Los invitados del Excel se ubican por su número de mesa.</span>
+            }
+        </p>
+
+        <div class="row g-2 align-items-end mb-3">
+            <div class="col-6 col-md-3">
+                <label asp-for="CantidadMesas" class="form-label fw-bold small mb-1"></label>
+                <input asp-for="CantidadMesas" class="form-control form-control-sm" type="number" min="1" max="300" placeholder="Ej. 10" />
+                <span asp-validation-for="CantidadMesas" class="text-danger small"></span>
+            </div>
+            <div class="col-6 col-md-3">
+                <label asp-for="CapacidadPorMesa" class="form-label fw-bold small mb-1"></label>
+                <input asp-for="CapacidadPorMesa" class="form-control form-control-sm" type="number" min="1" max="100" placeholder="Ej. 8" />
+                <span asp-validation-for="CapacidadPorMesa" class="text-danger small"></span>
+            </div>
+            <div class="col-12 col-md-6 d-flex flex-wrap gap-2">
+                <button type="button" id="btnGenerarMesas" class="btn btn-primary btn-sm">
+                    <i class="bi bi-magic"></i> @(esEdicion ? "Agregar estas mesas" : "Generar mesas")
+                </button>
+                <button type="button" id="btnAgregarMesa" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus-circle"></i> Agregar una mesa
+                </button>
+            </div>
+        </div>
+
+        <div id="erroresMesas" class="alert alert-danger py-2 small d-none" role="alert"></div>
+
+        <div class="mb-3 small text-muted" id="resumenMesas"></div>
+
+        <div class="row" id="bloquesMesas"></div>
+
+        @if (esEdicion)
+        {
+            <div class="card mesa-bloque sin-mesa mt-2">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <strong><i class="bi bi-person-dash"></i> Sin mesa asignada</strong>
+                    <span class="badge bg-secondary" id="contadorSinMesa">0</span>
+                </div>
+                <ul class="list-group list-group-flush mesa-invitados" id="listaSinMesa"></ul>
+            </div>
+            @if (!Model.Invitados.Any())
+            {
+                <p class="text-muted small mt-2 mb-0">
+                    Este evento aún no tiene invitados. Puedes registrarlos o importarlos desde Invitados → este evento.
+                </p>
+            }
+        }
+    </div>
+</div>
+
+<script type="application/json" id="mesasData">@Json.Serialize(datos)</script>
+<script>
+(function () {
+    var data = JSON.parse(document.getElementById('mesasData').textContent);
+    var esEdicion = data.esEdicion;
+    var MAX_MESAS = 300;
+    var cont = document.getElementById('bloquesMesas');
+    var sinMesaLista = document.getElementById('listaSinMesa');
+    var form = cont.closest('form');
+    var cajaErrores = document.getElementById('erroresMesas');
+    var seqMesa = 0, seqInv = 0, seqClave = 1;
+    var temporizador = null;
+
+    // ---------- utilidades para armar el HTML (siempre con textContent para evitar inyeccion de texto) ----------
+    function el(tag, props, hijos) {
+        var e = document.createElement(tag);
+        if (props) {
+            Object.keys(props).forEach(function (k) {
+                if (k === 'class') e.className = props[k];
+                else if (k === 'text') e.textContent = props[k];
+                else e.setAttribute(k, props[k]);
+            });
+        }
+        (hijos || []).forEach(function (h) { e.appendChild(h); });
+        return e;
+    }
+    function oculto(name, value, clase) {
+        return el('input', { type: 'hidden', name: name, value: value, 'class': clase || '' });
+    }
+    function campo(etiqueta, input, ancho) {
+        return el('div', { 'class': ancho }, [el('label', { 'class': 'form-label small fw-bold mb-0', text: etiqueta }), input]);
+    }
+    function columnas(incluirEliminadas) {
+        return Array.prototype.slice.call(cont.querySelectorAll(incluirEliminadas ? '.mesa-col' : '.mesa-col:not([data-eliminada])'));
+    }
+
+    // ---------- bloque de una mesa ----------
+    function crearBloque(m) {
+        var k = seqMesa++;
+        var p = 'Mesas[' + k + '].';
+        var col = el('div', { 'class': 'col-md-6 col-xl-4 mb-3 mesa-col' });
+        col.setAttribute('data-clave', m.clave);
+
+        var cabecera = el('div', { 'class': 'card-header bg-light' });
+        cabecera.appendChild(oculto('Mesas.Index', k));
+        cabecera.appendChild(oculto(p + 'IdMesa', m.idMesa || 0));
+        cabecera.appendChild(oculto(p + 'Clave', m.clave));
+        cabecera.appendChild(oculto(p + 'Eliminar', 'false', 'mesa-eliminar'));
+
+        var numero = el('input', { type: 'number', min: 1, max: 999, required: 'required', name: p + 'NumeroMesa', 'class': 'form-control form-control-sm mesa-numero', value: (m.numero == null ? '' : m.numero) });
+        var capacidad = el('input', { type: 'number', min: 1, max: 100, required: 'required', name: p + 'Capacidad', 'class': 'form-control form-control-sm mesa-capacidad', value: (m.capacidad == null ? '' : m.capacidad) });
+        var nombre = el('input', { type: 'text', maxlength: 100, name: p + 'NombreMesa', placeholder: 'Ej. Familia, Amigos...', 'class': 'form-control form-control-sm mesa-nombre', value: m.nombre || '' });
+
+        var fila1 = el('div', { 'class': 'row g-2 align-items-end' }, [
+            campo('N° mesa', numero, 'col-4'),
+            campo('Capacidad', capacidad, 'col-4'),
+            el('div', { 'class': 'col-4 text-end' }, [
+                el('span', { 'class': 'badge bg-secondary mesa-ocupacion me-1', text: '0/0' }),
+                el('button', { type: 'button', 'class': 'btn btn-outline-danger btn-sm btn-quitar-mesa', title: 'Quitar mesa' }, [el('i', { 'class': 'bi bi-trash' })])
+            ])
+        ]);
+        var fila2 = el('div', { 'class': 'mt-2' }, [campo('Nombre (opcional)', nombre, '')]);
+        cabecera.appendChild(fila1);
+        cabecera.appendChild(fila2);
+
+        var lista = el('ul', { 'class': 'list-group list-group-flush mesa-invitados' });
+        lista.setAttribute('data-clave', m.clave);
+
+        col.appendChild(el('div', { 'class': 'card mesa-bloque h-100 shadow-sm' }, [cabecera, lista]));
+        return col;
+    }
+
+    // ---------- fila de un invitado (solo en editar) ----------
+    function crearInvitado(g) {
+        var j = seqInv++;
+        var p = 'Invitados[' + j + '].';
+        var li = el('li', { 'class': 'list-group-item py-2 guest-row' });
+        li.setAttribute('data-ocupa', 1 + (g.acompanantes || 0));
+        li.appendChild(oculto('Invitados.Index', j));
+        li.appendChild(oculto(p + 'IdInvitado', g.idInvitado));
+
+        var info = el('div', { 'class': 'd-flex justify-content-between align-items-start gap-2' }, [
+            el('div', {}, [
+                el('div', { 'class': 'fw-semibold small', text: g.nombres }),
+                el('div', { 'class': 'text-muted', style: 'font-size:.75rem', text: 'DNI ' + g.dni + (g.acompanantes ? ' · +' + g.acompanantes + ' acomp.' : '') })
+            ]),
+            el('span', { 'class': 'badge ' + (g.confirmado ? 'bg-success' : 'bg-secondary'), text: g.confirmado ? 'Confirmado' : 'Pendiente' })
+        ]);
+        li.appendChild(info);
+
+        var sel = el('select', { name: p + 'MesaClave', 'class': 'form-select form-select-sm mt-1 guest-mesa', title: 'Cambiar de mesa' });
+        sel.setAttribute('data-valor', g.mesaClave || '');
+        sel.addEventListener('change', function () { moverInvitado(li, sel.value); });
+        li.appendChild(sel);
+        return li;
+    }
+
+    // ---------- desplegables de mesa de cada invitado ----------
+    function etiquetaMesa(col) {
+        var num = col.querySelector('.mesa-numero').value;
+        var nom = col.querySelector('.mesa-nombre').value.trim();
+        return 'Mesa ' + (num || '?') + (nom ? ' - ' + nom : '');
+    }
+    function poblarSelect(sel, activas) {
+        var actual = sel.hasAttribute('data-valor') ? sel.getAttribute('data-valor') : sel.value;
+        sel.removeAttribute('data-valor');
+        sel.innerHTML = '';
+        sel.appendChild(new Option('Sin mesa', ''));
+        activas.forEach(function (c) { sel.appendChild(new Option(etiquetaMesa(c), c.getAttribute('data-clave'))); });
+        sel.value = actual;
+        if (sel.value !== actual) sel.value = '';
+    }
+    function refrescarOpciones() {
+        if (!esEdicion) return;
+        var activas = columnas(false);
+        Array.prototype.forEach.call(document.querySelectorAll('.guest-mesa'), function (s) { poblarSelect(s, activas); });
+    }
+    function programarRefresco() {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(refrescarOpciones, 250);
+    }
+
+    // ---------- mover invitados entre bloques ----------
+    function listaDeMesa(clave) {
+        if (!clave) return sinMesaLista;
+        var col = cont.querySelector('.mesa-col[data-clave="' + clave + '"]:not([data-eliminada])');
+        return col ? col.querySelector('.mesa-invitados') : sinMesaLista;
+    }
+    function moverInvitado(li, clave) {
+        var destino = listaDeMesa(clave);
+        if (destino) destino.appendChild(li);
+        actualizar();
+    }
+
+    // ---------- contadores, resumen y duplicados ----------
+    function actualizar() {
+        var activas = columnas(false);
+        var conteo = {};
+        activas.forEach(function (c) {
+            var n = c.querySelector('.mesa-numero').value;
+            if (n !== '') conteo[n] = (conteo[n] || 0) + 1;
+        });
+
+        var capacidadTotal = 0, asignados = 0;
+        activas.forEach(function (c) {
+            var ocupados = 0;
+            Array.prototype.forEach.call(c.querySelectorAll('.guest-row'), function (li) { ocupados += parseInt(li.getAttribute('data-ocupa'), 10) || 0; });
+            var cap = parseInt(c.querySelector('.mesa-capacidad').value, 10) || 0;
+            capacidadTotal += cap;
+            asignados += ocupados;
+
+            var badge = c.querySelector('.mesa-ocupacion');
+            badge.textContent = ocupados + '/' + cap;
+            badge.className = 'badge mesa-ocupacion me-1 ' + (ocupados > cap ? 'bg-danger' : (ocupados === cap && cap > 0 ? 'bg-success' : 'bg-secondary'));
+
+            var inputNum = c.querySelector('.mesa-numero');
+            inputNum.classList.toggle('is-invalid', inputNum.value !== '' && conteo[inputNum.value] > 1);
+        });
+
+        var sinMesa = 0;
+        if (sinMesaLista) {
+            Array.prototype.forEach.call(sinMesaLista.querySelectorAll('.guest-row'), function (li) { sinMesa += parseInt(li.getAttribute('data-ocupa'), 10) || 0; });
+            document.getElementById('contadorSinMesa').textContent = sinMesaLista.querySelectorAll('.guest-row').length;
+        }
+
+        var texto = 'Mesas: ' + activas.length + ' · Capacidad total: ' + capacidadTotal + ' lugares';
+        if (esEdicion) texto += ' · Lugares ocupados: ' + asignados + ' · Sin mesa: ' + sinMesa;
+        document.getElementById('resumenMesas').textContent = texto;
+    }
+
+    function ordenar() {
+        columnas(true).sort(function (a, b) {
+            var x = parseInt(a.querySelector('.mesa-numero').value, 10), y = parseInt(b.querySelector('.mesa-numero').value, 10);
+            return (isNaN(x) ? 100000 : x) - (isNaN(y) ? 100000 : y);
+        }).forEach(function (c) { cont.appendChild(c); });
+        refrescarOpciones();
+    }
+
+    // ---------- agregar y quitar mesas ----------
+    function maxNumero() {
+        var max = 0;
+        columnas(false).forEach(function (c) { var n = parseInt(c.querySelector('.mesa-numero').value, 10); if (n > max) max = n; });
+        return max;
+    }
+    function marcarEliminada(col) {
+        col.setAttribute('data-eliminada', '1');
+        col.classList.add('d-none');
+        col.querySelector('.mesa-eliminar').value = 'true';
+        Array.prototype.forEach.call(col.querySelectorAll('.mesa-numero,.mesa-nombre,.mesa-capacidad'), function (i) { i.disabled = true; });
+    }
+    function agregarMesas(n, capacidad) {
+        if (columnas(false).length + n > MAX_MESAS) {
+            alert('Un evento no puede tener más de ' + MAX_MESAS + ' mesas.');
+            return false;
+        }
+        var siguiente = maxNumero() + 1;
+        for (var i = 0; i < n; i++) {
+            if (siguiente > 999) { alert('El número de mesa máximo es 999.'); break; }
+            cont.appendChild(crearBloque({ idMesa: 0, clave: 'n' + (seqClave++), numero: siguiente++, nombre: '', capacidad: capacidad }));
+        }
+        refrescarOpciones();
+        actualizar();
+        return true;
+    }
+    function quitarMesa(col) {
+        var num = col.querySelector('.mesa-numero').value || '?';
+        var invitados = col.querySelectorAll('.guest-row');
+        var mensaje = invitados.length > 0
+            ? 'La mesa ' + num + ' tiene ' + invitados.length + ' invitado(s), quedarán en "Sin mesa asignada". ¿Quitar la mesa?'
+            : '¿Quitar la mesa ' + num + '?';
+        if (!confirm(mensaje)) return;
+
+        Array.prototype.forEach.call(invitados, function (li) {
+            li.querySelector('.guest-mesa').value = '';
+            sinMesaLista.appendChild(li);
+        });
+
+        if (col.querySelector('input[name$=".IdMesa"]').value !== '0') marcarEliminada(col); // existe en la bd: se desactiva al guardar
+        else col.remove();                                                                       // era nueva: se descarta
+
+        refrescarOpciones();
+        actualizar();
+    }
+
+    // ---------- validacion antes de enviar ----------
+    function validar() {
+        var errores = [];
+        var activas = columnas(false);
+        var vistos = {};
+        activas.forEach(function (c) {
+            var n = parseInt(c.querySelector('.mesa-numero').value, 10);
+            var cap = parseInt(c.querySelector('.mesa-capacidad').value, 10);
+            if (isNaN(n) || n < 1 || n > 999) { errores.push('Todas las mesas deben tener un número entre 1 y 999.'); return; }
+            if (vistos[n]) errores.push('El número de mesa ' + n + ' está repetido.');
+            vistos[n] = true;
+            if (isNaN(cap) || cap < 1 || cap > 100) errores.push('La capacidad de la mesa ' + n + ' debe estar entre 1 y 100.');
+            var ocupados = 0;
+            Array.prototype.forEach.call(c.querySelectorAll('.guest-row'), function (li) { ocupados += parseInt(li.getAttribute('data-ocupa'), 10) || 0; });
+            if (!isNaN(cap) && ocupados > cap) errores.push('La mesa ' + n + ' tiene ' + ocupados + ' lugares ocupados y su capacidad es ' + cap + '.');
+        });
+        return errores.filter(function (e, i, a) { return a.indexOf(e) === i; });
+    }
+    function mostrarErrores(errores) {
+        cajaErrores.innerHTML = '';
+        errores.forEach(function (e) { cajaErrores.appendChild(el('div', { text: e })); });
+        cajaErrores.classList.toggle('d-none', errores.length === 0);
+        if (errores.length) cajaErrores.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ---------- eventos ----------
+    cont.addEventListener('input', function (e) {
+        var t = e.target;
+        if (t.classList.contains('mesa-capacidad')) actualizar();
+        else if (t.classList.contains('mesa-numero') || t.classList.contains('mesa-nombre')) { actualizar(); programarRefresco(); }
+    });
+    cont.addEventListener('change', function (e) {
+        if (e.target.classList.contains('mesa-numero')) { ordenar(); actualizar(); }
+    });
+    cont.addEventListener('click', function (e) {
+        var b = e.target.closest('.btn-quitar-mesa');
+        if (b) quitarMesa(b.closest('.mesa-col'));
+    });
+
+    var inpCantidad = document.getElementById('CantidadMesas');
+    var inpCapacidad = document.getElementById('CapacidadPorMesa');
+
+    document.getElementById('btnAgregarMesa').addEventListener('click', function () {
+        var cap = parseInt(inpCapacidad.value, 10);
+        if (isNaN(cap)) {
+            var ultimas = columnas(false);
+            cap = ultimas.length ? (parseInt(ultimas[ultimas.length - 1].querySelector('.mesa-capacidad').value, 10) || 10) : 10;
+        }
+        agregarMesas(1, Math.min(100, Math.max(1, cap)));
+    });
+
+    document.getElementById('btnGenerarMesas').addEventListener('click', function () {
+        var n = parseInt(inpCantidad.value, 10), cap = parseInt(inpCapacidad.value, 10);
+        if (isNaN(n) || n < 1 || n > MAX_MESAS) { mostrarErrores(['Indica una cantidad de mesas entre 1 y ' + MAX_MESAS + '.']); return; }
+        if (isNaN(cap) || cap < 1 || cap > 100) { mostrarErrores(['Indica cuántos invitados caben por mesa (entre 1 y 100).']); return; }
+        mostrarErrores([]);
+
+        // al crear un evento, "Generar" reemplaza los bloques que ya estaban; al editar solo agrega mesas nuevas
+        if (!esEdicion && columnas(false).length > 0) {
+            if (!confirm('Se reemplazarán las mesas que ya aparecen por ' + n + ' mesa(s) nuevas. ¿Continuar?')) return;
+            columnas(true).forEach(function (c) { c.remove(); });
+        }
+        agregarMesas(n, cap);
+    });
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            var errores = validar();
+            mostrarErrores(errores);
+            if (errores.length) e.preventDefault();
+        });
+    }
+
+    // ---------- dibujo inicial ----------
+    data.mesas.forEach(function (m) {
+        var n = /^n(\d+)$/.exec(m.clave);
+        if (n && parseInt(n[1], 10) >= seqClave) seqClave = parseInt(n[1], 10) + 1;
+        var col = crearBloque(m);
+        cont.appendChild(col);
+        if (m.eliminar) marcarEliminada(col);
+    });
+
+    if (esEdicion) {
+        data.invitados.forEach(function (g) {
+            var li = crearInvitado(g);
+            listaDeMesa(g.mesaClave).appendChild(li);
+        });
+        refrescarOpciones();
+    }
+    actualizar();
+})();
+</script>

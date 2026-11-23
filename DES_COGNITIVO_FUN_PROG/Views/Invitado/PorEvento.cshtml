@@ -67,6 +67,11 @@
 <div class="mb-3 d-flex flex-wrap gap-2">
     <a asp-action="Create" asp-route-idEvento="@Model.IdEvento" class="btn btn-success">Registrar Nuevo Invitado</a>
 
+    <!-- abre el panel para importar invitados desde un archivo de excel -->
+    <button type="button" class="btn btn-outline-success" data-bs-toggle="collapse" data-bs-target="#panelImportar" aria-expanded="false" aria-controls="panelImportar">
+        <i class="bi bi-file-earmark-excel"></i> Importar desde Excel
+    </button>
+
     <!-- abre en otra pestaña la ventana donde el invitado ingresa su dni y confirma su asistencia -->
     <a href="@urlFormularioCliente" target="_blank" rel="noopener" class="btn btn-outline-primary">
         <i class="bi bi-box-arrow-up-right"></i> Ver formulario del invitado
@@ -75,6 +80,53 @@
     <button type="button" id="btnCopiarEnlace" class="btn btn-outline-secondary" data-url="@urlCompletaCliente">
         <i class="bi bi-clipboard"></i> Copiar enlace para invitados
     </button>
+    <a asp-controller="EventoResumen" asp-action="Index" asp-route-idEvento="@Model.IdEvento" class="btn btn-outline-dark">
+    <i class="bi bi-diagram-3"></i> Ver resumen visual
+</a>
+</div>
+
+<!-- RESULTADO DE LA ULTIMA IMPORTACION DE EXCEL -->
+@if (TempData["ImportacionResumen"] != null)
+{
+    var tipoAlerta = TempData["ImportacionTipo"]?.ToString() ?? "info";
+    var detallesImportacion = TempData["ImportacionDetalles"] as IEnumerable<string>;
+
+    <div class="@("alert alert-" + tipoAlerta + " alert-dismissible fade show")" role="alert">
+        <strong>@TempData["ImportacionResumen"]</strong>
+        @if (detallesImportacion != null && detallesImportacion.Any())
+        {
+            <ul class="mb-0 mt-2 small">
+                @foreach (var detalle in detallesImportacion)
+                {
+                    <li>@detalle</li>
+                }
+            </ul>
+        }
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+<!-- PANEL DE IMPORTACION: sube un excel con invitados y los registra en este evento -->
+<div class="collapse mb-4" id="panelImportar">
+    <div class="card card-body border-0 shadow-sm rounded-4" style="background-color: #fffafb; border: 1px dashed #f8bbd0 !important;">
+        <form asp-action="ImportarExcel" method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
+            <input type="hidden" name="idEvento" value="@Model.IdEvento" />
+
+            <div class="col-md-7">
+                <label class="form-label fw-bold">Archivo de Excel (.xlsx)</label>
+                <input type="file" name="archivoExcel" class="form-control" accept=".xlsx" required />
+                <div class="form-text">
+                    Columnas: Nombre y DNI (obligatorias); Correo, Teléfono, Restricciones y Número de mesa (opcionales).
+                    Las mesas que no existan en el evento se crean automáticamente. Los invitados cuyo DNI ya existe en este evento se omiten.
+                </div>
+            </div>
+
+            <div class="col-md-5 d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-success"><i class="bi bi-upload"></i> Importar invitados</button>
+                <a asp-action="DescargarPlantilla" class="btn btn-outline-secondary"><i class="bi bi-download"></i> Descargar plantilla</a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- BUSQUEDA Y EXPORTACION (el excel respeta la busqueda aplicada) -->
@@ -119,15 +171,8 @@
                         <small class="text-muted">@item.Telefono</small>
                     </td>
                     <td>
-                        @if (item.Confirmado == true)
-                        {
-                            <span class="badge bg-success">Sí</span>
-                        }
-                        else
-                        {
-
-                            <span class="badge bg-secondary">No / Pendiente</span>
-                        }
+                        @if (item.Confirmado == true) { <span class="badge bg-success">Sí</span> }
+                        else { <span class="badge bg-secondary">No / Pendiente</span> }
                     </td>
                     <td>@item.NumAcompañantes</td>
                     <td>@item.RestriccionesAlimentarias</td>

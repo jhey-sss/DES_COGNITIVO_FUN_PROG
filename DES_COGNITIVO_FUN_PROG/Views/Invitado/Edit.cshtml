@@ -8,7 +8,7 @@
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="IdInvitado" />
-
+            
             <div class="row">
                 <div class="col-md-6 form-group mb-3">
                     <label asp-for="IdEvento" class="control-label"></label>
@@ -21,6 +21,10 @@
                         <option value="">-- Sin mesa asignada --</option>
                     </select>
                     <span asp-validation-for="IdMesa" class="text-danger"></span>
+                    <!-- aviso cuando el evento elegido todavia no tiene mesas -->
+                    <div id="avisoSinMesas" class="form-text text-warning d-none">
+                        Este evento aún no tiene mesas. <a asp-controller="Mesa" asp-action="Create" asp-route-idEvento="@Model.IdEvento" target="_blank">Crear una mesa</a>
+                    </div>
                 </div>
             </div>
 
@@ -78,7 +82,6 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{await Html.RenderPartialAsync("_ScriptMesasPorEvento");}
 }

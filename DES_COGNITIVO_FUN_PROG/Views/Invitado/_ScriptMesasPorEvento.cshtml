@@ -1,0 +1,47 @@
+﻿<!-- recarga el desplegable de mesas cada vez que se cambia el evento, porque cada evento tiene sus propias mesas -->
+<script>
+    (function () {
+        const selectEvento = document.getElementById('IdEvento');
+        const selectMesa = document.getElementById('IdMesa');
+        const aviso = document.getElementById('avisoSinMesas');
+        if (!selectEvento || !selectMesa) return;
+
+        const urlMesas = '@Url.Action("MesasPorEvento", "Invitado")';
+
+        // muestra el aviso cuando hay un evento elegido pero ese evento no tiene mesas creadas
+        function actualizarAviso() {
+            if (!aviso) return;
+            const sinMesas = selectEvento.value !== '' && selectMesa.options.length <= 1;
+            aviso.classList.toggle('d-none', !sinMesas);
+        }
+
+        async function cargarMesas() {
+            const mesaActual = selectMesa.value;
+
+            // dejamos solo la opcion "sin mesa" mientras se cargan las nuevas
+            while (selectMesa.options.length > 1) selectMesa.remove(1);
+
+            if (selectEvento.value !== '') {
+                try {
+                    const respuesta = await fetch(urlMesas + '?idEvento=' + encodeURIComponent(selectEvento.value) +
+                        '&idMesaActual=' + encodeURIComponent(mesaActual));
+                    if (respuesta.ok && !respuesta.redirected) {
+                        const mesas = await respuesta.json();
+                        mesas.forEach(function (mesa) {
+                            const opcion = new Option(mesa.text, mesa.value);
+                            selectMesa.add(opcion);
+                        });
+                        // si la mesa que estaba elegida pertenece al nuevo evento, la mantenemos seleccionada
+                        selectMesa.value = Array.from(selectMesa.options).some(function (o) { return o.value === mesaActual; }) ? mesaActual : '';
+                    }
+                } catch (error) {
+                    // si falla la carga dejamos solo la opcion "sin mesa asignada"
+                }
+            }
+            actualizarAviso();
+        }
+
+        selectEvento.addEventListener('change', cargarMesas);
+        actualizarAviso();
+    })();
+</script>

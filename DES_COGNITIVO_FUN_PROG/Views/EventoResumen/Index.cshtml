@@ -1,0 +1,525 @@
+﻿@model DES_COGNITIVO_FUN_PROG.Models.ViewModels.EventoResumenViewModel
+
+@{
+    ViewData["Title"] = "Resumen del evento";
+    // la tarjeta de cada mesa lee el id del evento de aqui
+    ViewData["IdEvento"] = Model.IdEvento;
+
+    var urlCompletaCliente = Url.Action("Acceso", "Invitado", new { idEvento = Model.IdEvento }, Context.Request.Scheme);
+}
+
+<div class="mb-3">
+    <a asp-controller="Invitado" asp-action="PorEvento" asp-route-idEvento="@Model.IdEvento" class="text-decoration-none"><i class="bi bi-arrow-left"></i> Volver a la lista de invitados</a>
+</div>
+
+<!-- ENCABEZADO DEL EVENTO -->
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1" style="color: #d81b60;">@Model.Nombre</h2>
+        <div class="text-muted">
+            <span class="badge bg-light text-secondary border">@Model.CodigoEvento</span>
+            <span class="badge rounded-pill" style="background-color: #f8bbd0; color: #880e4f;">@Model.NombreEstado</span>
+            &nbsp;<i class="bi bi-calendar-event"></i> @Model.Fecha.ToString("dd/MM/yyyy")
+            &nbsp;<i class="bi bi-geo-alt text-danger"></i> @Model.Lugar
+            &nbsp;<i class="bi bi-person"></i> @Model.NombreCliente
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <!-- excel con todas las mesas, una hoja por mesa -->
+        <a asp-action="ExportarTodasLasMesas" asp-route-idEvento="@Model.IdEvento" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Excel de todas las mesas
+        </a>
+        <a asp-controller="Invitado" asp-action="PorEvento" asp-route-idEvento="@Model.IdEvento" class="btn btn-outline-secondary">
+            <i class="bi bi-person-lines-fill"></i> Gestionar invitados
+        </a>
+        <a asp-controller="Evento" asp-action="Edit" asp-route-id="@Model.IdEvento" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Editar evento
+        </a>
+    </div>
+</div>
+
+<!-- TARJETAS DE RESUMEN -->
+<div class="row mb-2">
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100" style="background-color: #e3f2fd;">
+            <div class="card-body">
+                <h6 class="text-uppercase fw-bold mb-1" style="color: #5c8599; font-size: 0.75rem;">Invitados</h6>
+                <h3 class="mb-0 fw-bold" style="color: #1565c0;">@Model.TotalInvitados</h3>
+                <small class="text-muted">@Model.PersonasEnTotal personas con acompañantes</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100" style="background-color: #e8f5e9;">
+            <div class="card-body">
+                <h6 class="text-uppercase fw-bold mb-1" style="color: #639265; font-size: 0.75rem;">Confirmados</h6>
+                <h3 class="mb-0 fw-bold" style="color: #2e7d32;">@Model.TotalConfirmados</h3>
+                <small class="text-muted">@Model.PersonasConfirmadas personas con acompañantes</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100" style="background-color: #fff3e0;">
+            <div class="card-body">
+                <h6 class="text-uppercase fw-bold mb-1" style="color: #b0793a; font-size: 0.75rem;">Pendientes</h6>
+                <h3 class="mb-0 fw-bold" style="color: #e65100;">@Model.TotalPendientes</h3>
+                <small class="text-muted">sin confirmar asistencia</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100" style="background-color: #fce4ec;">
+            <div class="card-body">
+                <h6 class="text-uppercase fw-bold mb-1" style="color: #a3687c; font-size: 0.75rem;">Mesas</h6>
+                <h3 class="mb-0 fw-bold" style="color: #c2185b;">@Model.TotalMesas</h3>
+                <small class="text-muted">@Model.CapacidadTotal lugares en total</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PROGRESO DE CONFIRMACION Y OCUPACION DE MESAS -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="fw-semibold">Confirmación de asistencia</span>
+                    <span>@Model.TotalConfirmados de @Model.TotalInvitados (@Model.PorcentajeConfirmacion%)</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: @(Model.PorcentajeConfirmacion)%;"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="fw-semibold">Lugares ocupados en mesas</span>
+                    <span>@Model.LugaresOcupados de @Model.CapacidadTotal (@Model.PorcentajeOcupacion%)</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar" role="progressbar" style="width: @(Model.PorcentajeOcupacion)%; background-color: #f06292;"></div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.InvitadosSinMesa > 0)
+        {
+            <div class="alert alert-warning py-2 mt-3 mb-0 small">
+                <i class="bi bi-exclamation-triangle"></i>
+                Hay <strong>@Model.InvitadosSinMesa</strong> invitado(s) sin mesa asignada.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- PESTAÑAS -->
+<ul class="nav nav-pills mb-4 flex-wrap gap-1" id="pestanas-resumen" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-mesas" data-bs-toggle="pill" data-bs-target="#panel-mesas" type="button" role="tab" aria-controls="panel-mesas" aria-selected="true">
+            <i class="bi bi-ui-radios-grid"></i> Mesas <span class="badge rounded-pill bg-white text-dark ms-1">@Model.TotalMesas</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-invitados" data-bs-toggle="pill" data-bs-target="#panel-invitados" type="button" role="tab" aria-controls="panel-invitados" aria-selected="false">
+            <i class="bi bi-people"></i> Invitados <span class="badge rounded-pill bg-white text-dark ms-1">@Model.TotalInvitados</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-info" data-bs-toggle="pill" data-bs-target="#panel-info" type="button" role="tab" aria-controls="panel-info" aria-selected="false">
+            <i class="bi bi-info-circle"></i> Información
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+
+    <!-- PESTAÑA: MESAS -->
+    <div class="tab-pane fade show active" id="panel-mesas" role="tabpanel" aria-labelledby="tab-mesas" tabindex="0">
+
+        <!-- leyenda de los asientos -->
+        <div class="d-flex flex-wrap gap-3 small text-muted mb-3">
+            <span><span class="seat-leyenda seat-conf"></span> Confirmado</span>
+            <span><span class="seat-leyenda seat-pend"></span> Pendiente</span>
+            <span><span class="seat-leyenda seat-free"></span> Lugar libre</span>
+            <span><span class="seat-leyenda seat-over"></span> Sobrecupo</span>
+            <span>Los asientos con aro claro son acompañantes.</span>
+        </div>
+
+        @if (Model.Mesas.Any() || Model.SinMesa != null)
+        {
+            <div class="mb-3" style="max-width: 420px;">
+                <input type="search" id="buscar-mesa" class="form-control" placeholder="Buscar mesa o invitado (nombre / DNI)..." />
+            </div>
+
+            <div class="row g-3 align-items-start" id="grilla-mesas">
+                @foreach (var mesa in Model.Mesas)
+                {
+                    <partial name="_MesaCard" model="mesa" />
+                }
+
+                @if (Model.SinMesa != null)
+                {
+                    <partial name="_MesaCard" model="Model.SinMesa" />
+                }
+            </div>
+
+            <div id="mesas-sin-resultados" class="alert alert-light border text-center text-muted d-none">No se encontraron mesas con ese criterio.</div>
+        }
+        else
+        {
+            <div class="alert alert-light border text-center text-muted">
+                Este evento todavía no tiene mesas. Puedes crearlas desde
+                <a asp-controller="Evento" asp-action="Edit" asp-route-id="@Model.IdEvento">Editar evento</a>.
+            </div>
+        }
+    </div>
+
+    <!-- PESTAÑA: INVITADOS EN LISTA -->
+    <div class="tab-pane fade" id="panel-invitados" role="tabpanel" aria-labelledby="tab-invitados" tabindex="0">
+        <div class="row g-2 mb-3">
+            <div class="col-md-5">
+                <input type="search" id="buscar-invitado" class="form-control" placeholder="Buscar por nombre o DNI..." />
+            </div>
+            <div class="col-md-3">
+                <select id="filtro-estado" class="form-select" aria-label="Filtrar por estado">
+                    <option value="todos">Todos</option>
+                    <option value="confirmado">Confirmados</option>
+                    <option value="pendiente">Pendientes</option>
+                    <option value="sinmesa">Sin mesa</option>
+                </select>
+            </div>
+            <div class="col-md-4 text-md-end align-self-center small text-muted">
+                Mostrando <strong id="contador-invitados">@Model.Invitados.Count</strong> de @Model.Invitados.Count
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tabla-invitados">
+                    <thead>
+                        <tr>
+                            <th>Mesa</th>
+                            <th>Nombres</th>
+                            <th>DNI</th>
+                            <th>Estado</th>
+                            <th>Acompañantes</th>
+                            <th>Contacto</th>
+                            <th>Restricciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var inv in Model.Invitados.OrderBy(i => i.NumeroMesa ?? int.MaxValue).ThenBy(i => i.Nombres))
+                        {
+                            <tr data-busqueda="@((inv.Nombres + " " + inv.Dni).ToLowerInvariant())"
+                                data-estado="@(inv.Confirmado ? "confirmado" : "pendiente")"
+                                data-sinmesa="@(inv.NumeroMesa.HasValue ? "no" : "si")">
+                                <td>
+                                    @if (inv.NumeroMesa.HasValue)
+                                    {
+                                        <span class="badge rounded-pill" style="background-color: #f8bbd0; color: #880e4f;">@inv.TextoMesa</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill bg-light text-secondary border">Sin mesa</span>
+                                    }
+                                </td>
+                                <td class="fw-semibold">@inv.Nombres</td>
+                                <td>@inv.Dni</td>
+                                <td>
+                                    @if (inv.Confirmado) { <span class="badge bg-success">Confirmado</span> }
+                                    else { <span class="badge bg-secondary">Pendiente</span> }
+                                </td>
+                                <td>@inv.NumAcompañantes</td>
+                                <td>
+                                    <div>@inv.Correo</div>
+                                    <small class="text-muted">@inv.Telefono</small>
+                                </td>
+                                <td>@inv.RestriccionesAlimentarias</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div id="invitados-sin-resultados" class="text-center text-muted p-4 @(Model.Invitados.Any() ? "d-none" : "")">No hay invitados para mostrar.</div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA: INFORMACION DEL EVENTO -->
+    <div class="tab-pane fade" id="panel-info" role="tabpanel" aria-labelledby="tab-info" tabindex="0">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3" style="color: #d81b60;"><i class="bi bi-calendar-heart"></i> Datos del evento</h5>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Código</dt>
+                            <dd class="col-sm-8">@Model.CodigoEvento</dd>
+
+                            <dt class="col-sm-4">Estado</dt>
+                            <dd class="col-sm-8">@Model.NombreEstado</dd>
+
+                            <dt class="col-sm-4">Fecha</dt>
+                            <dd class="col-sm-8">@Model.Fecha.ToString("dd/MM/yyyy")</dd>
+
+                            <dt class="col-sm-4">Lugar</dt>
+                            <dd class="col-sm-8">@Model.Lugar</dd>
+
+                            <dt class="col-sm-4">Presupuesto</dt>
+                            <dd class="col-sm-8">@Model.Presupuesto.ToString("N2")</dd>
+
+                            <dt class="col-sm-4">Descripción</dt>
+                            <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Descripcion) ? "Sin descripción" : Model.Descripcion)</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3" style="color: #d81b60;"><i class="bi bi-person"></i> Cliente</h5>
+                        <dl class="row mb-3">
+                            <dt class="col-sm-4">Nombre</dt>
+                            <dd class="col-sm-8">@Model.NombreCliente</dd>
+
+                            <dt class="col-sm-4">Correo</dt>
+                            <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CorreoCliente) ? "—" : Model.CorreoCliente)</dd>
+
+                            <dt class="col-sm-4">Teléfono</dt>
+                            <dd class="col-sm-8 mb-0">@(string.IsNullOrWhiteSpace(Model.TelefonoCliente) ? "—" : Model.TelefonoCliente)</dd>
+                        </dl>
+
+                        <h6 class="fw-bold">Enlace para invitados</h6>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" readonly value="@urlCompletaCliente" id="enlace-invitados" />
+                            <button type="button" class="btn btn-outline-secondary" id="btnCopiarEnlaceResumen" data-url="@urlCompletaCliente"><i class="bi bi-clipboard"></i> Copiar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3" style="color: #d81b60;"><i class="bi bi-egg-fried"></i> Restricciones alimentarias</h5>
+                        @if (Model.Restricciones.Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var r in Model.Restricciones)
+                                {
+                                    <div class="col-md-6 col-xl-4">
+                                        <div class="border rounded-3 p-3 h-100" style="background-color: #fffafb;">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <span class="fw-semibold">@r.Restriccion</span>
+                                                <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">@r.Invitados.Count</span>
+                                            </div>
+                                            <div class="small text-muted">@string.Join(", ", r.Invitados)</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted">Ningún invitado ha registrado restricciones alimentarias.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- estilos de la vista de resumen del evento -->
+<style>
+    #pestanas-resumen .nav-link {
+        color: #6c757d;
+        background-color: #ffffff;
+        border: 1px solid #f8bbd0;
+        border-radius: 2rem;
+    }
+
+        #pestanas-resumen .nav-link.active {
+            background-color: #f48fb1;
+            border-color: #f48fb1;
+            color: #ffffff;
+        }
+
+    .mesa-card {
+        background-color: #ffffff;
+        transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+        .mesa-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.08) !important;
+        }
+
+        .mesa-card.mesa-sin {
+            border: 1px dashed #f48fb1 !important;
+            background-color: #fffafb;
+        }
+
+    /* mesa redonda con los asientos alrededor */
+    .mesa-redonda {
+        position: relative;
+        width: 190px;
+        height: 190px;
+        margin: 0.5rem auto 1rem auto;
+    }
+
+    .mesa-centro {
+        position: absolute;
+        top: 22%;
+        left: 22%;
+        width: 56%;
+        height: 56%;
+        border-radius: 50%;
+        background-color: #fce4ec;
+        border: 2px solid #f8bbd0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #c2185b;
+        font-weight: 700;
+        font-size: 1.6rem;
+    }
+
+    .seat {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        margin: -9px 0 0 -9px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        box-sizing: border-box;
+    }
+
+    .seats-sm .seat {
+        width: 13px;
+        height: 13px;
+        margin: -6.5px 0 0 -6.5px;
+    }
+
+    .seats-xs .seat {
+        width: 9px;
+        height: 9px;
+        margin: -4.5px 0 0 -4.5px;
+        border-width: 1px;
+    }
+
+    .seat-conf {
+        background-color: #43a047;
+    }
+
+    .seat-pend {
+        background-color: #ffb300;
+    }
+
+    .seat-free {
+        background-color: #ffffff;
+        border-color: #cfd8dc;
+    }
+
+    /* los acompañantes llevan un aro claro por dentro para distinguirlos del invitado titular */
+    .seat.seat-acomp {
+        box-shadow: 0 0 0 3px rgba(255,255,255,0.75) inset;
+    }
+
+    .seats-xs .seat.seat-acomp {
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.75) inset;
+    }
+
+    .seat-over {
+        background-color: #e53935 !important;
+    }
+
+    /* cuadritos de la leyenda */
+    .seat-leyenda {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        vertical-align: middle;
+        border: 2px solid transparent;
+    }
+
+        .seat-leyenda.seat-free {
+            border-color: #cfd8dc;
+        }
+</style>
+
+@section Scripts {
+    <script>
+        (function () {
+            // recuerda la pestaña abierta usando el hash de la direccion
+            const hash = window.location.hash;
+            if (hash) {
+                const boton = document.querySelector('#pestanas-resumen [data-bs-target="' + hash + '"]');
+                if (boton) bootstrap.Tab.getOrCreateInstance(boton).show();
+            }
+            document.querySelectorAll('#pestanas-resumen [data-bs-toggle="pill"]').forEach(function (boton) {
+                boton.addEventListener('shown.bs.tab', function () {
+                    history.replaceState(null, '', boton.dataset.bsTarget);
+                });
+            });
+
+            // buscador de mesas: filtra por titulo de la mesa, nombre o dni de sus invitados
+            const buscarMesa = document.getElementById('buscar-mesa');
+            if (buscarMesa) {
+                buscarMesa.addEventListener('input', function () {
+                    const texto = buscarMesa.value.trim().toLowerCase();
+                    let visibles = 0;
+                    document.querySelectorAll('#grilla-mesas .mesa-col').forEach(function (col) {
+                        const coincide = !texto || col.dataset.busqueda.includes(texto);
+                        col.classList.toggle('d-none', !coincide);
+                        if (coincide) visibles++;
+                    });
+                    document.getElementById('mesas-sin-resultados').classList.toggle('d-none', visibles > 0);
+                });
+            }
+
+            // buscador y filtro de la lista de invitados
+            const buscarInvitado = document.getElementById('buscar-invitado');
+            const filtroEstado = document.getElementById('filtro-estado');
+            const contador = document.getElementById('contador-invitados');
+            const sinResultados = document.getElementById('invitados-sin-resultados');
+
+            function filtrarInvitados() {
+                const texto = buscarInvitado.value.trim().toLowerCase();
+                const filtro = filtroEstado.value;
+                let visibles = 0;
+
+                document.querySelectorAll('#tabla-invitados tbody tr').forEach(function (fila) {
+                    let coincide = !texto || fila.dataset.busqueda.includes(texto);
+                    if (coincide && filtro === 'confirmado') coincide = fila.dataset.estado === 'confirmado';
+                    if (coincide && filtro === 'pendiente') coincide = fila.dataset.estado === 'pendiente';
+                    if (coincide && filtro === 'sinmesa') coincide = fila.dataset.sinmesa === 'si';
+
+                    fila.classList.toggle('d-none', !coincide);
+                    if (coincide) visibles++;
+                });
+
+                contador.textContent = visibles;
+                sinResultados.classList.toggle('d-none', visibles > 0);
+            }
+
+            buscarInvitado.addEventListener('input', filtrarInvitados);
+            filtroEstado.addEventListener('change', filtrarInvitados);
+
+            // copia al portapapeles el enlace que usan los invitados para confirmar su asistencia
+            document.getElementById('btnCopiarEnlaceResumen').addEventListener('click', async function () {
+                const boton = this;
+                const textoOriginal = boton.innerHTML;
+                try {
+                    await navigator.clipboard.writeText(boton.dataset.url);
+                    boton.innerHTML = '<i class="bi bi-check2"></i> Copiado';
+                    setTimeout(function () { boton.innerHTML = textoOriginal; }, 2500);
+                } catch (error) {
+                    document.getElementById('enlace-invitados').select();
+                }
+            });
+        })();
+    </script>
+}

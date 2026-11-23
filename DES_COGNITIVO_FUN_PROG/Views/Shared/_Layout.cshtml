@@ -17,6 +17,7 @@
         body {
             background-color: #f8f9fa; /* Fondo general suave */
             overflow-x: hidden;
+            margin-bottom: 0; /* site.css deja 60px de margen abajo, eso hacia la pagina mas alta que la pantalla y empujaba el boton de cerrar sesion fuera de la vista */
         }
         .wrapper {
             display: flex;
@@ -33,6 +34,7 @@
             flex-direction: column;
             box-shadow: 2px 0 5px rgba(0,0,0,0.02);
             flex-shrink: 0;
+            overflow-y: auto; /* si el menu no cabe en pantallas bajas, se desplaza dentro de la barra */
         }
         .sidebar-header {
             padding: 25px 20px;
@@ -70,10 +72,77 @@
             flex-direction: column;
             min-height: 100vh;
             overflow-y: auto;
+            min-width: 0; /* evita que tableros y tablas anchas empujen el contenido fuera de la pantalla */
         }
         .main-content {
             flex-grow: 1;
             padding: 30px;
+            min-width: 0;
+        }
+
+        /* Escritorio: la barra lateral se queda fija a la altura de la pantalla,
+           asi el boton de Cerrar Sesion siempre se ve sin tener que bajar por toda la pagina */
+        @@media (min-width: 992px) {
+            .sidebar {
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                align-self: flex-start;
+            }
+            .topbar-movil, .sidebar-fondo {
+                display: none !important;
+            }
+        }
+
+        /* Celular y tablet: el menu se oculta y se abre con el boton de la barra superior */
+        @@media (max-width: 991.98px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 1045;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease-in-out;
+            }
+            .sidebar.abierto {
+                transform: translateX(0);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            }
+            .sidebar-fondo {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background-color: rgba(0,0,0,0.35);
+                z-index: 1040;
+            }
+            .sidebar-fondo.visible {
+                display: block;
+            }
+            .topbar-movil {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                position: sticky;
+                top: 0;
+                z-index: 1030;
+                padding: 10px 16px;
+                background-color: #f8bbd0;
+                color: #880e4f;
+            }
+            .topbar-movil button {
+                background: transparent;
+                border: 0;
+                color: #880e4f;
+                font-size: 1.6rem;
+                line-height: 1;
+                padding: 0;
+                min-width: 32px;
+                min-height: 32px;
+            }
+            .main-content {
+                padding: 16px;
+            }
         }
         
         /* Ajuste de footer original */
@@ -87,7 +156,7 @@
 <body>
     <div class="wrapper">
         <!-- BARRA LATERAL  -->
-        <nav class="sidebar">
+        <nav class="sidebar" id="menu-lateral" aria-label="Menú principal">
             <div class="sidebar-header">
                 <h5 class="mb-0 fw-bold"><i class="bi bi-gem"></i> Event Planner</h5>
             </div>
@@ -109,7 +178,7 @@
                     </a>
                 </li>
                 <li>
-                    <a asp-area="" asp-controller="Invitado" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Invitado" ? "active" : "")">
+                    <a asp-area="" asp-controller="Invitado" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Invitado" || ViewContext.RouteData.Values["Controller"]?.ToString() == "EventoResumen" ? "active" : "")">
                         <i class="bi bi-envelope-paper"></i> Invitados
                     </a>
                 </li>
@@ -127,9 +196,20 @@
             </div>
         </nav>
 
+        <!-- fondo oscuro que cubre la pantalla cuando el menu esta abierto en celular -->
+        <div class="sidebar-fondo" id="menu-fondo"></div>
+
         <!-- ÁREA DE CONTENIDO PRINCIPAL -->
         <div class="content-wrapper">
-            
+
+            <!-- barra superior que solo aparece en celular y tablet, con el boton para abrir el menu -->
+            <div class="topbar-movil">
+                <button type="button" id="menu-boton" aria-controls="menu-lateral" aria-expanded="false" aria-label="Abrir menú">
+                    <i class="bi bi-list"></i>
+                </button>
+                <span class="fw-bold"><i class="bi bi-gem"></i> Event Planner</span>
+            </div>
+
             <!-- Aquí se inyectan todas las vistas (Index, Create, Edit, etc) -->
             <main role="main" class="main-content">
                 @RenderBody()
@@ -146,6 +226,28 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        // abre y cierra el menu lateral en celular y tablet
+        (function () {
+            const menu = document.getElementById('menu-lateral');
+            const fondo = document.getElementById('menu-fondo');
+            const boton = document.getElementById('menu-boton');
+            if (!menu || !fondo || !boton) return;
+
+            function alternar(abrir) {
+                menu.classList.toggle('abierto', abrir);
+                fondo.classList.toggle('visible', abrir);
+                boton.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+            }
+
+            boton.addEventListener('click', function () { alternar(!menu.classList.contains('abierto')); });
+            fondo.addEventListener('click', function () { alternar(false); });
+            menu.querySelectorAll('a').forEach(function (enlace) {
+                enlace.addEventListener('click', function () { alternar(false); });
+            });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') alternar(false); });
+        })();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
