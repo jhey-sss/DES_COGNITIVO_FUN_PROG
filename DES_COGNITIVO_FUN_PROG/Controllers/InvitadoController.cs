@@ -567,6 +567,13 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmarAsistencia(InvitadoConfirmacionViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                var inv = await _context.Invitados.FindAsync(model.IdInvitado);
+                if (inv == null || inv.Activo == false) return NotFound();
+                model.Nombres = inv.Nombres;
+                return View("MiInvitacion", model);
+            }
             var invitado = await _context.Invitados.FindAsync(model.IdInvitado);
             if (invitado == null || invitado.Activo == false) return NotFound();
 
