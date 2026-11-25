@@ -1,35 +1,5 @@
 ﻿@model IEnumerable<DES_COGNITIVO_FUN_PROG.Models.Mesa>
 
-@{
-    ViewData["Title"] = "Mesas";
-}
-
-<h1>Mesas</h1>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>IdMesa</th>
-            <th>IdEvento</th>
-            <th>NumeroMesa</th>
-            <th>Capacidad</th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>@item.IdMesa</td>
-            <td>@item.IdEvento</td>
-            <td>@item.NumeroMesa</td>
-            <td>@item.Capacidad</td>
-        </tr>
-}
-    </tbody>
-</table>
-@{
-    Layout = null;
-    ViewData["Title"] = "Plano de mesas";
-}
 <!doctype html>
 <html lang="es">
 <head>
@@ -38,9 +8,15 @@
 <title>Plano de mesas</title>
 <style>
   :root{
-    --bg:#faf5ef; --card:#ffffff; --ink:#2b2230; --muted:#7d7385;
-    --accent:#b0476a; --accent-2:#e8a5b8; --line:#eadfe3;
-    --shadow:0 10px 30px rgba(80,40,60,.12);
+    --bg:#faf5ef; 
+    --card:#ffffff; 
+    --ink:#2b2230; 
+    --muted:#7d7385;
+    --accent:#b0476a; 
+    --accent-2:#e8a5b8; 
+    --line:#eadfe3;
+    --shadow:0 10px 30px 
+    rgba(80,40,60,.12);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -108,7 +84,10 @@
   agregas un comentario y luego haces pull, para guardar los coambios de forma local
 
   luego le das confirmar todo
+  var a confirmar salientes y ahi confirmas todos 
+  y envias los cambios a la rama que deceas
 
+  LISTO ESO ES TODO :) 
 
   */
   .panel{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:20px;position:sticky;top:12px}
@@ -134,11 +113,6 @@
   .custom-row{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:.82rem;color:var(--muted)}
   .custom-row input{width:38px;height:28px;border:0;padding:0;background:none;cursor:pointer}
   .rotrow{display:flex;align-items:center;gap:8px}
-  .rotrow input[type=range]{flex:1;accent-color:var(--accent)}
-  .rotrow button{padding:8px 12px}
-  #rot-val{min-width:42px;text-align:right;font-size:.85rem;color:var(--muted)}
-  .panel .actions{margin-top:18px;display:flex;gap:8px}
-  .panel .actions button{flex:1;padding:10px 8px;font-size:.9rem}
 
   /* ===== Resumen ===== */
   .summary{max-width:1100px;margin:0 auto;padding:0 16px 40px}
@@ -207,4 +181,3 @@
 </script>
 </body>
 </html>
-
