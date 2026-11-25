@@ -1,0 +1,228 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Plano de mesas";
+}
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plano de mesas</title>
+<style>
+  :root{
+    --bg:#faf5ef; --card:#ffffff; --ink:#2b2230; --muted:#7d7385;
+    --accent:#b0476a; --accent-2:#e8a5b8; --line:#eadfe3;
+    --shadow:0 10px 30px rgba(80,40,60,.12);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{padding:22px 20px 6px;text-align:center}
+  header h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:1.8rem;letter-spacing:.02em}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;align-items:center;padding:14px 16px;max-width:1100px;margin:0 auto}
+  .grp{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  button{font:inherit;cursor:pointer;border:0;border-radius:999px;padding:10px 18px;font-weight:600;transition:.15s transform,.15s box-shadow,.15s background}
+  button:active{transform:scale(.96)}
+  .toolbar button{padding:9px 15px;font-size:.92rem}
+  .btn-add{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(176,71,106,.35)}
+  .btn-add:hover{box-shadow:0 6px 16px rgba(176,71,106,.45)}
+  .btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn-ghost:hover{background:#fbf3f6}
+  .btn-danger{background:#fff;color:#b3261e;border:1px solid #f0c9c6}
+  .btn-danger:hover{background:#fdeceb}
+  button[disabled]{opacity:.4;cursor:not-allowed}
+  .count{color:var(--muted);font-size:.92rem;font-weight:600;padding:0 6px}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;max-width:1100px;margin:0 auto;padding:0 16px 28px;align-items:start}
+  @@media(max-width:860px){.layout{grid-template-columns:1fr}}
+
+  /* ===== Salón ===== */
+  .venue-wrap{display:flex;justify-content:center}
+  .venue{
+    position:relative;width:100%;max-width:560px;aspect-ratio:3/4;border-radius:22px;overflow:hidden;box-shadow:var(--shadow);
+    background:linear-gradient(180deg,#6fa882,#5f9a73);
+    border:6px solid #fff;touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+  .zone{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700;font-size:clamp(.6rem,2.2vw,.85rem);letter-spacing:.08em;text-transform:uppercase;pointer-events:none}
+  .stage{left:33%;top:-1%;width:41%;height:11%;background:linear-gradient(180deg,#3a2b47,#5a4170);color:#f4e9ff;border-radius:0 0 40px 40px;box-shadow:0 6px 14px rgba(40,20,60,.35)}
+  .dance{left:36%;top:29%;width:34%;height:34%;border-radius:14px;color:#6b6272;background:#fff;box-shadow:0 4px 12px rgba(20,60,35,.25)}
+  .bar{left:3%;top:34%;width:8%;height:24%;border-radius:12px;background:#fff;color:#6b6272;box-shadow:0 4px 10px rgba(20,60,35,.25)}
+  .bar span{writing-mode:vertical-rl;transform:rotate(180deg)}
+  .snacks{left:36%;top:75%;width:31%;height:8%;border-radius:12px;background:#fff;color:#6b6272;box-shadow:0 4px 10px rgba(20,60,35,.25)}
+  .col{position:absolute;transform:translate(-50%,-50%);width:6.5%;aspect-ratio:1;background:linear-gradient(135deg,#4b4452,#2b2530);border-radius:6px;box-shadow:0 3px 8px rgba(0,0,0,.3);pointer-events:none}
+  .col::after{content:"";position:absolute;inset:22%;border:1px solid rgba(255,255,255,.25);border-radius:3px}
+
+  /* ===== Mesas ===== */
+  .table{
+    position:absolute;transform:translate(-50%,-50%);cursor:grab;touch-action:none;
+    display:flex;align-items:center;justify-content:center;
+    border:3px solid rgba(0,0,0,.18);box-shadow:0 6px 12px rgba(0,0,0,.22),inset 0 0 0 4px rgba(255,255,255,.25);
+    transition:box-shadow .15s, border-color .15s;
+  }
+  .table.round{width:13%;aspect-ratio:1;border-radius:50%}
+  .table.rect{width:18%;aspect-ratio:2.4/1;border-radius:10px}
+  .table.dragging{cursor:grabbing;box-shadow:0 14px 24px rgba(0,0,0,.3);z-index:50}
+  .table.selected{border-color:var(--accent);box-shadow:0 0 0 4px rgba(176,71,106,.35),0 8px 16px rgba(0,0,0,.25);z-index:40}
+  .table .lbl{max-width:86%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:clamp(.55rem,1.8vw,.8rem);font-weight:800;pointer-events:none;text-shadow:0 1px 0 rgba(255,255,255,.25)}
+  .nap{position:absolute;width:15%;aspect-ratio:1;border-radius:3px;transform:translate(-50%,-50%) rotate(45deg);border:1px solid rgba(0,0,0,.25);pointer-events:none}
+  .table.rect .nap{width:8%}
+  .chair{position:absolute;width:14%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:#f5efe6;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .table.rect .chair{width:9%;border-radius:3px}
+  .rot{display:none;position:absolute;left:50%;top:-42px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:grab;touch-action:none}
+  .rot::after{content:"";position:absolute;left:50%;top:100%;width:2px;height:20px;margin-left:-1px;background:var(--accent)}
+  .table.selected .rot{display:block}
+
+  /* ===== Panel ===== */
+  .panel{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:20px;position:sticky;top:12px}
+  .panel h2{margin:0 0 4px;font-family:Georgia,serif;font-size:1.25rem}
+  .hint{color:var(--muted);font-size:.92rem;line-height:1.5}
+  .empty{text-align:center;padding:30px 6px}
+  .empty .big{font-size:2.4rem}
+  label.small{display:block;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+  input[type=text],input[type=number]{width:100%;font:inherit;padding:10px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fdfafb;outline:none;transition:.15s border-color,.15s box-shadow}
+  input[type=text]:focus,input[type=number]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(176,71,106,.15)}
+  .stepper{display:flex;align-items:center;gap:8px}
+  .stepper button{width:42px;height:42px;padding:0;font-size:1.2rem;flex:none}
+  .stepper input{text-align:center;font-weight:700;font-size:1.05rem}
+  .current{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .chip{width:34px;height:34px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px var(--line),0 2px 6px rgba(0,0,0,.15)}
+  .current b{font-size:.95rem}
+  .results{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;max-height:132px;overflow:auto;padding:4px 2px;margin-top:6px}
+  .sw{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:4px 2px;border-radius:10px;font-size:.68rem;color:var(--ink);font-weight:500}
+  .sw:hover{background:#faf1f4}
+  .sw i{width:30px;height:30px;border-radius:50%;box-shadow:0 0 0 1.5px var(--line),0 2px 5px rgba(0,0,0,.12)}
+  .sw.on i{box-shadow:0 0 0 3px var(--accent)}
+  .none{grid-column:1/-1;color:var(--muted);font-size:.85rem;padding:8px 0;text-align:center}
+  .custom-row{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:.82rem;color:var(--muted)}
+  .custom-row input{width:38px;height:28px;border:0;padding:0;background:none;cursor:pointer}
+  .rotrow{display:flex;align-items:center;gap:8px}
+  .rotrow input[type=range]{flex:1;accent-color:var(--accent)}
+  .rotrow button{padding:8px 12px}
+  #rot-val{min-width:42px;text-align:right;font-size:.85rem;color:var(--muted)}
+  .panel .actions{margin-top:18px;display:flex;gap:8px}
+  .panel .actions button{flex:1;padding:10px 8px;font-size:.9rem}
+
+  /* ===== Resumen ===== */
+  .summary{max-width:1100px;margin:0 auto;padding:0 16px 40px}
+  .summary .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:20px}
+  .summary h2{margin:0 0 12px;font-family:Georgia,serif;font-size:1.25rem}
+  .summary h3{margin:14px 0 6px;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+  .chipx{display:inline-flex;align-items:center;gap:8px;background:#fbf6f3;border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 6px;font-size:.88rem}
+  .dot{display:inline-block;width:18px;height:18px;border-radius:50%;box-shadow:0 0 0 1.5px var(--line);vertical-align:-4px;margin-right:8px;flex:none}
+  .chipx .dot{margin:0}
+  .twrap{overflow-x:auto;margin-top:10px}
+  table.sum{width:100%;border-collapse:collapse;font-size:.93rem}
+  table.sum th{text-align:left;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:2px solid var(--line)}
+  table.sum td{padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.sum tr[data-id]{cursor:pointer}
+  table.sum tr[data-id]:hover{background:#fbf6f3}
+  table.sum tr.sel{background:#fbeff3}
+  table.sum tr.tot td{font-weight:700;border-bottom:0}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#2b2230;color:#fff;padding:11px 18px;border-radius:999px;font-size:.9rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.25s;z-index:100;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Plano de mesas</h1>
+</header>
+
+<div class="toolbar">
+  <div class="grp">
+    <button class="btn-add" id="addRound">＋ Mesa redonda</button>
+    <button class="btn-add" id="addRect">＋ Mesa rectangular</button>
+  </div>
+  <div class="grp">
+    <button class="btn-ghost" id="dup" disabled>⧉ Duplicar</button>
+    <button class="btn-danger" id="delTop" disabled>🗑 Eliminar mesa</button>
+    <button class="btn-ghost" id="undo" disabled>↶ Deshacer</button>
+    <button class="btn-ghost" id="reset">Restablecer</button>
+  </div>
+  <div class="grp">
+    <button class="btn-ghost" id="dlImg">⬇ Imagen</button>
+  </div>
+  <span class="count" id="count"></span>
+</div>
+
+<div class="layout">
+  <div class="venue-wrap">
+    <div class="venue" id="venue">
+      <div class="zone stage"><span>Escenario</span></div>
+      <div class="zone dance"><span>Pista de baile</span></div>
+      <div class="zone bar"><span>Bar</span></div>
+      <div class="zone snacks"><span>Bocaditos</span></div>
+      <div id="cols"></div>
+      <div id="tables"></div>
+    </div>
+  </div>
+
+  <aside class="panel" id="panel"></aside>
+</div>
+
+<section class="summary" id="summary"></section>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  /* ---------- Colores (nombre en español → hex) ---------- */
+  const COLORS = [
+    ["Blanco","#ffffff"],["Marfil","#fffff0"],["Crema","#f6ecd2"],["Beige","#e6d3b3"],["Champagne","#f2dfc0"],
+    ["Dorado","#d4a537"],["Mostaza","#d9a920"],["Amarillo","#f5d63d"],["Durazno","#f9b99a"],["Naranja","#f28c28"],
+    ["Terracota","#c8664a"],["Coral","#f26b5e"],["Rojo","#d12b2b"],["Vino","#722f37"],["Burdeos","#5d1a2a"],
+    ["Rosa palo","#e8b4bc"],["Rosado","#f4a3c0"],["Fucsia","#d6247f"],["Lila","#c9a8e0"],["Lavanda","#b79ede"],
+    ["Morado","#6a3d8f"],["Azul marino","#1d2a5c"],["Azul","#2f5fd0"],["Celeste","#8ecff0"],["Turquesa","#2bb7b3"],
+    ["Menta","#a8e6cf"],["Verde","#2f9e5b"],["Verde oliva","#7a8444"],["Salvia","#9cb09a"],["Verde esmeralda","#0f7a5a"],
+    ["Marrón","#6b4426"],["Gris","#9a9aa0"],["Plateado","#c4c7cc"],["Negro","#1c1c1f"]
+  ];
+            const norm = (s: string): string =>
+                s.normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .toLowerCase()
+                    .trim();
+
+            const find = (n: string) => {
+                const c = COLORS.find(c => norm(c[0]) === norm(n));
+
+                if (!c) {
+                    throw new Error(`Color no encontrado: ${n}`);
+                }
+
+                return c;
+            };
+
+            const mk = (n: string) => {
+                const c = find(n);
+                return { name: c[0], hex: c[1] };
+            };
+
+            const esc = (s: string | number): string =>
+                String(s).replace(/[&<>"']/g, c =>
+                ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;"
+                }[c]!)
+                );
+
+  /* ---------- Constantes del salón ---------- */
+  const K = 4/3;                       // el salón es 3:4, así que el alto = ancho × 4/3
+  const ROUND_W = 13, RECT_W = 18, RECT_RATIO = 2.4;   // tamaños en % del ancho (igual que el CSS)
+  const SEATS = { round:{def:8, min:2, max:12}, rect:{def:10, min:2, max:16} };
+
+  /* Medidas de la pista (en metros). Las columnas quedan a COL_DIST_M de cada esquina de la pista. */
+  const PISTA_ANCHO_M = 6, COL_DIST_M = 2;
+  const DANCE = {x:36, y:29, w:34, h:34};
+  const mx = DANCE.w / PISTA_ANCHO_M, my = mx * 0.75, dd = COL_DIST_M / Math.SQRT2;
+  const CORNERS = [[DANCE.x,DANCE.y,-1,-1],[DANCE.x+DANCE.w,DANCE.y,1,-1],[DANCE.x,DANCE.y+DANCE.h,-1,1],[DANCE.x+DANCE.w,DANCE.y+DANCE.h,1,1]];
+  const COLS = CORNERS.map(([cx,cy,sx,sy])=>({x:cx+sx*dd*mx, y:cy+sy*dd*my}));
+
+
+  
+})();
+</script>
+</body>
+</html>

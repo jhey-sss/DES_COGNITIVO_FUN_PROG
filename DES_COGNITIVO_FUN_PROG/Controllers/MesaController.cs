@@ -59,7 +59,7 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var eventosActivos = _context.Eventos.Where(e => e.Activo == true).ToList();
+            var eventosActivos = await _context.Eventos.Where(e => e.Activo == true).ToListAsync();
             ViewData["IdEvento"] = new SelectList(eventosActivos, "IdEvento", "Nombre", model.IdEvento);
             return View(model);
         }
@@ -175,6 +175,11 @@ namespace DES_COGNITIVO_FUN_PROG.Controllers
         private bool MesaExists(int id)
         {
             return _context.Mesas.Any(e => e.IdMesa == id);
+        }
+
+        public IActionResult Plano()
+        {
+            return View();
         }
     }
 }
